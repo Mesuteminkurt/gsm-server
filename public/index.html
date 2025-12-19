@@ -1,28 +1,138 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8">
-  <title>GSM Dashboard</title>
-</head>
-<body style="text-align:center; font-family:Arial;">
+    <meta charset="UTF-8">
+    <title>SUBU-TETRA EMT İZLEME MERKEZİ</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background-color: #0b1020;
+            color: white;
+        }
 
-<h1>📡 Cihaz Verileri</h1>
-<p>Sıcaklık: <b id="temp">--</b> °C</p>
-<p>Nem: <b id="hum">--</b> %</p>
-<p>Son Güncelleme: <b id="time">--</b></p>
+        header {
+            background-color: #11183a;
+            padding: 25px;
+            text-align: center;
+            font-size: 32px;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
+            padding: 40px;
+        }
+
+        .card {
+            background-color: #1a2258;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        .title {
+            font-size: 20px;
+            margin-bottom: 15px;
+            color: #9fa8ff;
+        }
+
+        .value {
+            font-size: 48px;
+            font-weight: bold;
+        }
+
+        .unit {
+            font-size: 20px;
+            color: #aaa;
+        }
+
+        .full {
+            grid-column: span 2;
+        }
+
+        footer {
+            text-align: center;
+            padding: 15px;
+            font-size: 14px;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    SUBU-TETRA EMT İZLEME MERKEZİ
+</header>
+
+<div class="container">
+
+    <!-- Araç Hızı -->
+    <div class="card">
+        <div class="title">Araç Hızı</div>
+        <div class="value" id="speed">0</div>
+        <div class="unit">km/h</div>
+    </div>
+
+    <!-- Batarya Sıcaklığı -->
+    <div class="card">
+        <div class="title">Batarya Sıcaklığı (Max)</div>
+        <div class="value" id="temp">0</div>
+        <div class="unit">°C</div>
+    </div>
+
+    <!-- Toplam Gerilim -->
+    <div class="card">
+        <div class="title">Toplam Batarya Gerilimi</div>
+        <div class="value" id="voltage">0</div>
+        <div class="unit">V</div>
+    </div>
+
+    <!-- Kalan Enerji -->
+    <div class="card">
+        <div class="title">Kalan Enerji</div>
+        <div class="value" id="energy">0</div>
+        <div class="unit">Wh</div>
+    </div>
+
+    <!-- Zaman -->
+    <div class="card full">
+        <div class="title">Zaman / Tarih</div>
+        <div class="value" id="time">--:--:--</div>
+        <div class="unit" id="date">--.--.----</div>
+    </div>
+
+</div>
+
+<footer>
+    SUBU-TETRA | Elektrikli Mobilite Takımı
+</footer>
 
 <script>
-async function loadData() {
-  const res = await fetch("/api/data");
-  const data = await res.json();
+    function updateTime() {
+        const now = new Date();
+        document.getElementById("time").innerText =
+            now.toLocaleTimeString("tr-TR");
+        document.getElementById("date").innerText =
+            now.toLocaleDateString("tr-TR");
+    }
 
-  document.getElementById("temp").innerText = data.temp ?? "--";
-  document.getElementById("hum").innerText = data.hum ?? "--";
-  document.getElementById("time").innerText = data.time ?? "--";
-}
+    setInterval(updateTime, 1000);
+    updateTime();
 
-setInterval(loadData, 3000);
-loadData();
+    // 🔴 ÖRNEK VERİ (STM/GSM GELENE KADAR)
+    function fakeData() {
+        document.getElementById("speed").innerText = Math.floor(Math.random() * 120);
+        document.getElementById("temp").innerText = Math.floor(30 + Math.random() * 20);
+        document.getElementById("voltage").innerText = (300 + Math.random() * 20).toFixed(1);
+        document.getElementById("energy").innerText = Math.floor(2000 + Math.random() * 500);
+    }
+
+    setInterval(fakeData, 2000);
 </script>
 
 </body>
