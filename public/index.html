@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>GSM Dashboard</title>
+</head>
+<body style="text-align:center; font-family:Arial;">
+
+<h1>📡 Cihaz Verileri</h1>
+<p>Sıcaklık: <b id="temp">--</b> °C</p>
+<p>Nem: <b id="hum">--</b> %</p>
+<p>Son Güncelleme: <b id="time">--</b></p>
+
+<script>
+async function loadData() {
+  const res = await fetch("/api/data");
+  const data = await res.json();
+
+  document.getElementById("temp").innerText = data.temp ?? "--";
+  document.getElementById("hum").innerText = data.hum ?? "--";
+  document.getElementById("time").innerText = data.time ?? "--";
+}
+
+setInterval(loadData, 3000);
+loadData();
+</script>
+
+</body>
+</html>
