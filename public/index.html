@@ -1,138 +1,92 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <title>SUBU-TETRA EMT İZLEME MERKEZİ</title>
-    <style>
-        body {
-            margin: 0;
-            font-family: Arial, Helvetica, sans-serif;
-            background-color: #0b1020;
-            color: white;
-        }
-
-        header {
-            background-color: #11183a;
-            padding: 25px;
-            text-align: center;
-            font-size: 32px;
-            font-weight: bold;
-            letter-spacing: 2px;
-        }
-
-        .container {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 30px;
-            padding: 40px;
-        }
-
-        .card {
-            background-color: #1a2258;
-            border-radius: 15px;
-            padding: 30px;
-            text-align: center;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
-        }
-
-        .title {
-            font-size: 20px;
-            margin-bottom: 15px;
-            color: #9fa8ff;
-        }
-
-        .value {
-            font-size: 48px;
-            font-weight: bold;
-        }
-
-        .unit {
-            font-size: 20px;
-            color: #aaa;
-        }
-
-        .full {
-            grid-column: span 2;
-        }
-
-        footer {
-            text-align: center;
-            padding: 15px;
-            font-size: 14px;
-            color: #888;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <title>SUBU-TETRA EMT İZLEME MERKEZİ</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: white;
+      text-align: center;
+    }
+    h1 {
+      margin-top: 20px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+      margin: 40px;
+    }
+    .card {
+      background: #1e293b;
+      padding: 30px;
+      border-radius: 12px;
+      font-size: 24px;
+    }
+    .value {
+      font-size: 40px;
+      margin-top: 10px;
+      color: #38bdf8;
+    }
+    .time {
+      grid-column: span 2;
+      background: #020617;
+    }
+  </style>
 </head>
 <body>
 
-<header>
-    SUBU-TETRA EMT İZLEME MERKEZİ
-</header>
+<h1>SUBU-TETRA EMT İZLEME MERKEZİ</h1>
 
-<div class="container">
+<div class="grid">
+  <div class="card">
+    Araç Hızı (km/h)
+    <div class="value" id="speed">-</div>
+  </div>
 
-    <!-- Araç Hızı -->
-    <div class="card">
-        <div class="title">Araç Hızı</div>
-        <div class="value" id="speed">0</div>
-        <div class="unit">km/h</div>
-    </div>
+  <div class="card">
+    Batarya Sıcaklığı (°C)
+    <div class="value" id="temp">-</div>
+  </div>
 
-    <!-- Batarya Sıcaklığı -->
-    <div class="card">
-        <div class="title">Batarya Sıcaklığı (Max)</div>
-        <div class="value" id="temp">0</div>
-        <div class="unit">°C</div>
-    </div>
+  <div class="card">
+    Batarya Gerilimi (V)
+    <div class="value" id="voltage">-</div>
+  </div>
 
-    <!-- Toplam Gerilim -->
-    <div class="card">
-        <div class="title">Toplam Batarya Gerilimi</div>
-        <div class="value" id="voltage">0</div>
-        <div class="unit">V</div>
-    </div>
+  <div class="card">
+    Kalan Enerji (Wh)
+    <div class="value" id="energy">-</div>
+  </div>
 
-    <!-- Kalan Enerji -->
-    <div class="card">
-        <div class="title">Kalan Enerji</div>
-        <div class="value" id="energy">0</div>
-        <div class="unit">Wh</div>
-    </div>
-
-    <!-- Zaman -->
-    <div class="card full">
-        <div class="title">Zaman / Tarih</div>
-        <div class="value" id="time">--:--:--</div>
-        <div class="unit" id="date">--.--.----</div>
-    </div>
-
+  <div class="card time">
+    Zaman / Tarih
+    <div class="value" id="time">-</div>
+  </div>
 </div>
 
-<footer>
-    SUBU-TETRA | Elektrikli Mobilite Takımı
-</footer>
-
 <script>
-    function updateTime() {
-        const now = new Date();
-        document.getElementById("time").innerText =
-            now.toLocaleTimeString("tr-TR");
-        document.getElementById("date").innerText =
-            now.toLocaleDateString("tr-TR");
-    }
+async function updateData() {
+  try {
+    const res = await fetch("/last");
+    const data = await res.json();
 
-    setInterval(updateTime, 1000);
-    updateTime();
+    if (!data) return;
 
-    // 🔴 ÖRNEK VERİ (STM/GSM GELENE KADAR)
-    function fakeData() {
-        document.getElementById("speed").innerText = Math.floor(Math.random() * 120);
-        document.getElementById("temp").innerText = Math.floor(30 + Math.random() * 20);
-        document.getElementById("voltage").innerText = (300 + Math.random() * 20).toFixed(1);
-        document.getElementById("energy").innerText = Math.floor(2000 + Math.random() * 500);
-    }
+    document.getElementById("speed").innerText = data.speed;
+    document.getElementById("temp").innerText = data.temp;
+    document.getElementById("voltage").innerText = data.voltage;
+    document.getElementById("energy").innerText = data.energy;
+    document.getElementById("time").innerText =
+      new Date(data.timestamp).toLocaleString();
+  } catch (err) {
+    console.log("Veri bekleniyor...");
+  }
+}
 
-    setInterval(fakeData, 2000);
+setInterval(updateData, 1000);
 </script>
 
 </body>
