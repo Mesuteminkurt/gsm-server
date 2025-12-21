@@ -8,11 +8,13 @@ app.use(express.static("public"));
 
 const PORT = process.env.PORT || 3000;
 
-// Son gelen telemetri burada tutulur
+// Son gelen telemetri RAM'de tutulur
 let lastTelemetry = null;
 
-// CSV başlık kontrolü
-const csvFile = "telemetry.csv";
+// CSV dosya adı
+const csvFile = path.join(__dirname, "telemetry.csv");
+
+// CSV başlık satırı (ilk çalışmada)
 if (!fs.existsSync(csvFile)) {
   fs.writeFileSync(
     csvFile,
@@ -20,7 +22,7 @@ if (!fs.existsSync(csvFile)) {
   );
 }
 
-// Telemetri alma
+// 🔹 Telemetri alma endpoint
 app.post("/telemetry", (req, res) => {
   const { speed, temp, voltage, energy } = req.body;
 
@@ -35,7 +37,13 @@ app.post("/telemetry", (req, res) => {
 
   const timestamp = new Date().toISOString();
 
-  lastTelemetry = { timestamp, speed, temp, voltage, energy };
+  lastTelemetry = {
+    timestamp,
+    speed,
+    temp,
+    voltage,
+    energy,
+  };
 
   const line = `${timestamp};${speed};${temp};${voltage};${energy}\n`;
   fs.appendFileSync(csvFile, line);
@@ -43,9 +51,14 @@ app.post("/telemetry", (req, res) => {
   res.send("OK");
 });
 
-// Arayüzün çekeceği endpoint
+// 🔹 Arayüzün veri çektiği endpoint
 app.get("/last", (req, res) => {
   res.json(lastTelemetry);
+});
+
+// 🔹 CSV DOSYASINI İNDİRME ENDPOINT (ÖNEMLİ)
+app.get("/download-csv", (req, res) => {
+  res.download(csvFile, "telemetry.csv");
 });
 
 app.listen(PORT, () => {
