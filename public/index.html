@@ -2,73 +2,105 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<title>SUBU-TETRA Telemetri Paneli</title>
+<title>SUBU-TETRA EMT</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
+*{box-sizing:border-box}
 body{
 margin:0;
-font-family:Inter,Segoe UI,Arial;
-background:linear-gradient(135deg,#020617,#0f172a);
+font-family:Inter,Segoe UI;
+background:linear-gradient(120deg,#020617,#0f172a,#020617);
 color:white;
 overflow:hidden;
 }
+
+/* HEADER */
 .header{
-height:70px;
-background:linear-gradient(90deg,#0ea5e9,#38bdf8);
+height:75px;
 display:flex;
 align-items:center;
-padding-left:80px;
+gap:20px;
+padding:0 25px;
+background:rgba(15,23,42,.75);
+backdrop-filter:blur(10px);
+border-bottom:1px solid rgba(255,255,255,.05);
+}
+.logo{
+height:50px;
+}
+.title{
 font-size:22px;
 font-weight:600;
+letter-spacing:.5px;
 }
+
+/* MENU */
 .menu-btn{
 position:fixed;
-top:18px;
-left:20px;
-font-size:28px;
+top:22px;
+right:25px;
+font-size:26px;
 cursor:pointer;
 z-index:9999;
 }
 .sidebar{
 position:fixed;
 top:0;
-left:-260px;
+right:-260px;
 width:260px;
 height:100%;
 background:#020617;
-padding-top:90px;
+padding-top:100px;
 transition:.35s;
 z-index:9998;
+border-left:1px solid rgba(255,255,255,.05);
 }
 .sidebar a{
 display:block;
-padding:18px;
-color:white;
+padding:18px 25px;
+color:#cbd5f5;
 text-decoration:none;
-font-size:18px;
+font-size:17px;
+transition:.2s;
 }
-.sidebar a:hover{background:#1e293b}
+.sidebar a:hover{
+background:#0f172a;
+color:white;
+}
+
+/* PAGES */
 .page{
 display:none;
-height:calc(100vh - 70px);
+height:calc(100vh - 75px);
 align-items:center;
 justify-content:center;
 flex-direction:column;
+padding:20px;
 }
 .active{display:flex}
+
+/* CARDS */
 .grid{
 display:grid;
 grid-template-columns:repeat(2,1fr);
-gap:25px;
-width:90%;
-max-width:950px;
+gap:22px;
+width:95%;
+max-width:1000px;
 }
 .card{
-background:rgba(30,41,59,.6);
-padding:25px;
+background:rgba(30,41,59,.55);
+backdrop-filter:blur(14px);
 border-radius:20px;
+padding:25px;
 text-align:center;
+border:1px solid rgba(255,255,255,.05);
+box-shadow:0 0 20px rgba(0,0,0,.35);
+transition:.25s;
+}
+.card:hover{
+transform:translateY(-4px);
+box-shadow:0 0 30px rgba(56,189,248,.15);
 }
 .value{
 font-size:34px;
@@ -77,43 +109,64 @@ color:#38bdf8;
 font-weight:600;
 }
 .time{grid-column:span 2}
-.alert{color:#ef4444;font-weight:bold}
+
+.alert{color:#ef4444;font-weight:700}
+
+/* BUTTON */
 button{
-padding:15px 40px;
-font-size:18px;
+padding:14px 45px;
+font-size:17px;
 border:none;
 border-radius:12px;
 background:linear-gradient(90deg,#38bdf8,#0ea5e9);
 color:white;
 cursor:pointer;
+box-shadow:0 0 20px rgba(56,189,248,.25);
 }
+
+/* TABLE */
 .tableBox{
-max-height:400px;
+max-height:420px;
 overflow:auto;
 background:#020617;
 padding:20px;
 border-radius:15px;
 margin-top:20px;
-width:90%;
-max-width:900px;
+width:95%;
+max-width:950px;
+border:1px solid rgba(255,255,255,.05);
 }
 table{width:100%;border-collapse:collapse;}
-th,td{padding:12px;border-bottom:1px solid #1e293b;text-align:center;}
+th,td{
+padding:12px;
+border-bottom:1px solid #1e293b;
+text-align:center;
+}
 th{color:#38bdf8}
+
+/* GAUGE CANVAS */
+#gauge{
+margin-bottom:25px;
+filter:drop-shadow(0 0 20px rgba(56,189,248,.35));
+}
 </style>
 </head>
 <body>
 
-<div class="menu-btn" onclick="toggleMenu()">☰</div>
-<div class="header">SUBU-TETRA Telemetri İzleme Sistemi</div>
-
-<div class="sidebar" id="menu">
-<a onclick="showPage('telemetry')">Telemetri</a>
-<a onclick="showPage('graph')">Grafik</a>
-<a onclick="showPage('csv')">CSV Kayıt</a>
+<div class="header">
+<img src="logo.png" class="logo">
+<div class="title">SUBU-TETRA EMT TELEMETRİ MERKEZİ</div>
 </div>
 
-<!-- TELEMETRI -->
+<div class="menu-btn" onclick="toggleMenu()">☰</div>
+
+<div class="sidebar" id="menu">
+<a onclick="showPage('telemetry')">Telemetri Paneli</a>
+<a onclick="showPage('graph')">Canlı Grafik</a>
+<a onclick="showPage('csv')">CSV Kayıtları</a>
+</div>
+
+<!-- TELEMETRİ -->
 <div id="telemetry" class="page active">
 
 <canvas id="gauge" width="260" height="260"></canvas>
@@ -150,7 +203,7 @@ Zaman
 
 <!-- GRAPH -->
 <div id="graph" class="page">
-<canvas id="chart" width="900" height="450"></canvas>
+<canvas id="chart" width="950" height="450"></canvas>
 </div>
 
 <!-- CSV -->
@@ -177,12 +230,12 @@ Zaman
 <script>
 function toggleMenu(){
 let m=document.getElementById("menu");
-m.style.left=m.style.left==="0px"?"-260px":"0px";
+m.style.right=m.style.right==="0px"?"-260px":"0px";
 }
 function showPage(id){
 document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
 document.getElementById(id).classList.add("active");
-document.getElementById("menu").style.left="-260px";
+document.getElementById("menu").style.right="-260px";
 }
 
 /* GAUGE */
@@ -190,19 +243,22 @@ const g=document.getElementById("gauge").getContext("2d");
 function drawGauge(speed){
 let s=Number(speed)||0;
 g.clearRect(0,0,260,260);
+
 g.beginPath();
 g.arc(130,130,110,Math.PI,0);
 g.strokeStyle="#1e293b";
 g.lineWidth=22;
 g.stroke();
+
 let a=Math.PI+(s/120)*Math.PI;
 g.beginPath();
 g.arc(130,130,110,Math.PI,a);
 g.strokeStyle="#38bdf8";
 g.lineWidth=22;
 g.stroke();
+
 g.fillStyle="white";
-g.font="32px Arial";
+g.font="32px Segoe UI";
 g.textAlign="center";
 g.fillText(s+" km/h",130,145);
 }
