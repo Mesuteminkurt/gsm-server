@@ -11,6 +11,15 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "cors": "^2.8.6",
     "express": "^5.2.1"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Mesuteminkurt/gsm-server.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Mesuteminkurt/gsm-server/issues"
+  },
+  "homepage": "https://github.com/Mesuteminkurt/gsm-server#readme"
 }

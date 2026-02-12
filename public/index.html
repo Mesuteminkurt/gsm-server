@@ -278,7 +278,9 @@ options:{responsive:true,animation:false}
 });
 
 /* CSV */
-function downloadCSV(){window.location="/download";}
+function downloadCSV(){
+  window.location="/download-csv";
+}
 async function loadCSV(){
 try{
 let r=await fetch("/csv");
