@@ -6,79 +6,85 @@
 
 <style>
 body{
-  font-family:Arial, sans-serif;
+  margin:0;
+  font-family:Arial;
   background:#0f172a;
   color:white;
-  text-align:center;
-  margin:0;
+  display:flex;
+  flex-direction:column;
+  height:100vh;
 }
 
 /* HEADER */
 .header{
   display:flex;
-  justify-content:center;
   align-items:center;
-  gap:20px;
-  padding:20px;
+  justify-content:center;
+  gap:15px;
+  padding:15px;
 }
 
 .header img{
-  height:75px;
+  height:60px;
 }
 
 .header h1{
   margin:0;
-  font-size:32px;
+  font-size:28px;
 }
 
-/* GRID */
-.grid{
+/* DASHBOARD */
+.dashboard{
+  flex:1;
   display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:25px;
-  margin:40px;
+  grid-template-columns:1.2fr 1fr 1fr;
+  grid-template-rows:1fr 1fr;
+  gap:20px;
+  padding:20px;
+  box-sizing:border-box;
 }
 
-/* CARD */
+/* CARDS */
 .card{
   background:#1e293b;
-  padding:35px;
   border-radius:14px;
-  font-size:24px;
-  box-shadow:0 0 15px rgba(0,0,0,0.4);
-  transition:.3s;
-}
-
-.card:hover{
-  transform:scale(1.03);
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  font-size:22px;
 }
 
 .value{
-  font-size:42px;
+  font-size:38px;
   margin-top:10px;
   color:#38bdf8;
 }
 
+/* SPEED BIG */
+.speed{
+  grid-row:span 2;
+}
+
+/* TIME */
 .time{
   grid-column:span 2;
-  background:#020617;
 }
 
 /* BUTTON */
 .download{
-  margin-bottom:30px;
+  padding:10px;
+  text-align:center;
 }
 
 button{
   background:#38bdf8;
   border:none;
-  padding:15px 30px;
-  font-size:18px;
-  border-radius:10px;
+  padding:12px 30px;
+  font-size:16px;
+  border-radius:8px;
   cursor:pointer;
-  font-weight:bold;
 }
-
 button:hover{
   background:#0ea5e9;
 }
@@ -86,114 +92,111 @@ button:hover{
 </head>
 <body>
 
-<!-- HEADER -->
 <div class="header">
 <img src="logo.png">
 <h1>SUBU-TETRA EMT İZLEME MERKEZİ</h1>
 </div>
 
-<!-- GRID -->
-<div class="grid">
+<div class="dashboard">
 
-<!-- SPEED GAUGE -->
-<div class="card">
-Araç Hızı (km/h)
+<!-- SPEED -->
+<div class="card speed">
+Araç Hızı
 
-<svg viewBox="0 0 200 120" width="100%">
-  <path d="M20 100 A80 80 0 0 1 180 100"
-        stroke="#334155"
-        stroke-width="15"
-        fill="none"/>
+<svg viewBox="0 0 200 120" width="90%">
+<path d="M20 100 A80 80 0 0 1 180 100"
+stroke="#334155"
+stroke-width="15"
+fill="none"/>
 
-  <line id="needle"
-        x1="100" y1="100"
-        x2="100" y2="30"
-        stroke="#38bdf8"
-        stroke-width="6"
-        stroke-linecap="round"
-        transform="rotate(-90 100 100)"/>
+<line id="needle"
+x1="100" y1="100"
+x2="100" y2="30"
+stroke="#38bdf8"
+stroke-width="6"
+stroke-linecap="round"
+transform="rotate(-90 100 100)"/>
 
-  <circle cx="100" cy="100" r="8" fill="#38bdf8"/>
+<circle cx="100" cy="100" r="8" fill="#38bdf8"/>
 </svg>
 
-<div class="value" id="speedText">0</div>
+<div class="value" id="speed">-</div>
 </div>
 
 <!-- TEMP -->
 <div class="card">
-Batarya Sıcaklığı (°C)
+Batarya Sıcaklığı
 <div class="value" id="temp">-</div>
 </div>
 
 <!-- VOLTAGE -->
 <div class="card">
-Batarya Gerilimi (V)
+Gerilim
 <div class="value" id="voltage">-</div>
 </div>
 
 <!-- ENERGY -->
 <div class="card">
-Kalan Enerji (Wh)
+Enerji
 <div class="value" id="energy">-</div>
 </div>
 
 <!-- SOC -->
 <div class="card">
-Batarya SoC (%)
+Batarya SoC
 <div class="value" id="soc">-</div>
 </div>
 
 <!-- TIME -->
 <div class="card time">
-Zaman / Tarih
+Zaman
 <div class="value" id="time">-</div>
 </div>
 
 </div>
 
-<!-- DOWNLOAD -->
 <div class="download">
-<button onclick="downloadCSV()">CSV İndir</button>
+<button onclick="downloadCSV()">CSV indir</button>
 </div>
 
 <script>
-function updateSpeedGauge(speed){
-  const min=0;
-  const max=180;
-  const angle=((speed-min)/(max-min))*180-90;
-
-  document
-  .getElementById("needle")
-  .setAttribute("transform",`rotate(${angle} 100 100)`);
-
-  document.getElementById("speedText").innerText=speed;
+function safe(v){
+  return (v===undefined || v===null) ? "-" : v;
 }
 
-async function updateData(){
+function updateGauge(speed){
+  if(speed==="-" ) return;
+
+  const angle=(speed/180)*180-90;
+  document.getElementById("needle")
+  .setAttribute("transform",`rotate(${angle} 100 100)`);
+}
+
+async function update(){
   try{
     const res=await fetch("/last");
-    const data=await res.json();
-    if(!data)return;
+    const d=await res.json();
+    if(!d)return;
 
-    updateSpeedGauge(data.speed);
+    document.getElementById("speed").innerText=safe(d.speed);
+    document.getElementById("temp").innerText=safe(d.temp);
+    document.getElementById("voltage").innerText=safe(d.voltage);
+    document.getElementById("energy").innerText=safe(d.energy);
+    document.getElementById("soc").innerText=safe(d.soc);
 
-    document.getElementById("temp").innerText=data.temp;
-    document.getElementById("voltage").innerText=data.voltage;
-    document.getElementById("energy").innerText=data.energy;
-    document.getElementById("soc").innerText=data.soc ?? "-";
+    if(d.timestamp)
+      document.getElementById("time").innerText =
+        new Date(d.timestamp).toLocaleString();
 
-    document.getElementById("time").innerText=
-      new Date(data.timestamp).toLocaleString();
+    updateGauge(d.speed);
 
-  }catch{
-    console.log("Veri bekleniyor...");
-  }
+  }catch{}
 }
 
-setInterval(updateData,1000);
+setInterval(update,1000);
 
 function downloadCSV(){
-  window.location.href="/download-csv";
+  window.location="/download-csv";
 }
 </script>
 
