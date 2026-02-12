@@ -2,250 +2,265 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<title>SUBU-TETRA EMT İZLEME MERKEZİ</title>
+<title>SUBU-TETRA Telemetri</title>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 body{
- margin:0;
- font-family:Segoe UI;
- background:#0b1220;
- color:white;
- overflow:hidden;
+  margin:0;
+  font-family:Segoe UI;
+  background:#0f172a;
+  color:white;
+  overflow:hidden;
 }
 
-/* HEADER */
-.header{
- display:flex;
- align-items:center;
- gap:15px;
- padding:12px 20px;
- background:#020617;
- border-bottom:1px solid #1e293b;
+/* MENU */
+.menu-btn{
+  position:fixed;
+  top:15px;
+  left:15px;
+  font-size:30px;
+  cursor:pointer;
+  z-index:9999;
 }
 
-.menuBtn{
- font-size:28px;
- cursor:pointer;
-}
-
-.header img{height:45px}
-.header h1{margin:0;font-size:22px}
-
-/* SIDEBAR */
 .sidebar{
- position:fixed;
- top:0;
- left:-220px;
- width:220px;
- height:100%;
- background:#020617;
- border-right:1px solid #1e293b;
- transition:.3s;
- padding-top:80px;
+  position:fixed;
+  top:0;
+  left:-250px;
+  width:250px;
+  height:100%;
+  background:#020617;
+  padding-top:80px;
+  transition:.3s;
+  z-index:9998;
 }
 
-.sidebar button{
- width:100%;
- background:none;
- border:none;
- color:white;
- padding:15px;
- text-align:left;
- font-size:16px;
- cursor:pointer;
+.sidebar a{
+  display:block;
+  padding:15px;
+  color:white;
+  text-decoration:none;
+  font-size:18px;
+}
+.sidebar a:hover{
+  background:#1e293b;
 }
 
-.sidebar button:hover{
- background:#1e293b;
-}
-
-.sidebar.open{left:0}
-
-/* PAGE */
+/* PAGES */
 .page{
- position:absolute;
- top:70px;
- left:0;
- width:100%;
- height:calc(100% - 70px);
- display:none;
- padding:15px;
- box-sizing:border-box;
+  display:none;
+  height:100vh;
+  width:100vw;
+  justify-content:center;
+  align-items:center;
+  flex-direction:column;
 }
 
-.page.active{display:block}
+.active{
+  display:flex;
+}
 
 /* GRID */
 .grid{
- display:grid;
- grid-template-columns:2fr 1fr 1fr;
- gap:18px;
- height:100%;
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:20px;
+  width:90%;
+  max-width:900px;
 }
 
-/* CARD */
 .card{
- background:#111827;
- border-radius:12px;
- display:flex;
- flex-direction:column;
- justify-content:center;
- align-items:center;
+  background:#1e293b;
+  padding:20px;
+  border-radius:15px;
+  text-align:center;
 }
 
-.title{opacity:.7}
-.value{font-size:38px;color:#38bdf8}
-
-/* SPEED BIG */
-.speed{grid-row:span 2}
-
-/* TIME */
-.time{grid-column:span 3}
-
-/* CSV PAGE */
-.csvPage{
- display:flex;
- justify-content:center;
- align-items:center;
- height:100%;
+.value{
+  font-size:32px;
+  margin-top:10px;
+  color:#38bdf8;
 }
 
-.downloadBtn{
- padding:18px 40px;
- font-size:18px;
- border:none;
- border-radius:10px;
- background:#38bdf8;
- cursor:pointer;
+.time{
+  grid-column:span 2;
+}
+
+/* GAUGE */
+#gauge{
+  background:#020617;
+  border-radius:50%;
+}
+
+/* TEMP ALERT */
+.alert{
+  color:red;
+  font-weight:bold;
+}
+
+/* BUTTON */
+button{
+  padding:15px 30px;
+  font-size:18px;
+  border:none;
+  border-radius:10px;
+  background:#38bdf8;
+  cursor:pointer;
+}
+button:hover{
+  background:#0ea5e9;
 }
 </style>
 </head>
 <body>
 
-<div class="header">
-<div class="menuBtn" onclick="toggleMenu()">☰</div>
-<img src="logo.png">
-<h1>SUBU-TETRA EMT İZLEME MERKEZİ</h1>
-</div>
+<div class="menu-btn" onclick="toggleMenu()">☰</div>
 
 <div class="sidebar" id="menu">
-<button onclick="openPage('telemetry')">Telemetri</button>
-<button onclick="openPage('graph')">Grafik</button>
-<button onclick="openPage('csv')">CSV Kayıt</button>
+<a onclick="showPage('telemetry')">Telemetri</a>
+<a onclick="showPage('graph')">Grafik</a>
+<a onclick="showPage('csv')">CSV Kayıt</a>
 </div>
 
-<!-- TELEMETRY PAGE -->
-<div class="page active" id="telemetry">
+<!-- TELEMETRI -->
+<div id="telemetry" class="page active">
+
+<canvas id="gauge" width="250" height="250"></canvas>
+
 <div class="grid">
 
-<div class="card speed">
-<div class="title">HIZ</div>
-
-<svg viewBox="0 0 200 120" width="90%">
-<path d="M20 100 A80 80 0 0 1 180 100"
-stroke="#334155" stroke-width="15" fill="none"/>
-<line id="needle" x1="100" y1="100" x2="100" y2="30"
-stroke="#38bdf8" stroke-width="6"
-transform="rotate(-90 100 100)"/>
-<circle cx="100" cy="100" r="8" fill="#38bdf8"/>
-</svg>
-
-<div class="value" id="speed">-</div>
+<div class="card">
+Batarya Sıcaklığı
+<div id="temp" class="value">-</div>
 </div>
 
-<div class="card"><div class="title">SICAKLIK</div><div class="value" id="temp">-</div></div>
-<div class="card"><div class="title">GERİLİM</div><div class="value" id="volt">-</div></div>
-<div class="card"><div class="title">ENERJİ</div><div class="value" id="energy">-</div></div>
-<div class="card"><div class="title">SOC</div><div class="value" id="soc">-</div></div>
+<div class="card">
+Gerilim
+<div id="voltage" class="value">-</div>
+</div>
+
+<div class="card">
+Enerji
+<div id="energy" class="value">-</div>
+</div>
 
 <div class="card time">
-<div class="title">ZAMAN</div>
-<div class="value" id="time">-</div>
+Zaman
+<div id="time" class="value">-</div>
 </div>
 
 </div>
 </div>
 
-<!-- GRAPH PAGE -->
-<div class="page" id="graph">
-<canvas id="chart"></canvas>
+<!-- GRAPH -->
+<div id="graph" class="page">
+<canvas id="chart" width="800" height="400"></canvas>
 </div>
 
-<!-- CSV PAGE -->
-<div class="page" id="csv">
-<div class="csvPage">
-<button class="downloadBtn" onclick="window.location='/download-csv'">
-CSV DOSYASINI İNDİR
-</button>
-</div>
+<!-- CSV -->
+<div id="csv" class="page">
+<h2>CSV Kayıt İndir</h2>
+<button onclick="downloadCSV()">CSV İndir</button>
 </div>
 
 <script>
 
 /* MENU */
 function toggleMenu(){
- menu.classList.toggle("open");
+  let m=document.getElementById("menu");
+  m.style.left = m.style.left==="0px" ? "-250px" : "0px";
 }
 
-function openPage(id){
- document.querySelectorAll(".page")
- .forEach(p=>p.classList.remove("active"));
- document.getElementById(id).classList.add("active");
- menu.classList.remove("open");
+function showPage(id){
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  document.getElementById("menu").style.left="-250px";
 }
 
 /* GAUGE */
-function gauge(v){
- if(v==null)return;
- const a=(v/180)*180-90;
- needle.setAttribute("transform",`rotate(${a} 100 100)`);
+const gctx=document.getElementById("gauge").getContext("2d");
+
+function drawGauge(speed){
+  let s = Number(speed)||0;
+  gctx.clearRect(0,0,250,250);
+
+  gctx.beginPath();
+  gctx.arc(125,125,100,Math.PI,0);
+  gctx.strokeStyle="#334155";
+  gctx.lineWidth=20;
+  gctx.stroke();
+
+  let angle=Math.PI+(s/100)*Math.PI;
+
+  gctx.beginPath();
+  gctx.arc(125,125,100,Math.PI,angle);
+  gctx.strokeStyle="#38bdf8";
+  gctx.lineWidth=20;
+  gctx.stroke();
+
+  gctx.fillStyle="white";
+  gctx.font="30px Segoe UI";
+  gctx.textAlign="center";
+  gctx.fillText(s+" km/h",125,140);
 }
 
-/* CHART */
-const chart=new Chart(document.getElementById("chart"),{
- type:"line",
- data:{
-  labels:[],
-  datasets:[
-   {label:"Hız",data:[]},
-   {label:"Sıcaklık",data:[]}
-  ]
- },
- options:{animation:false,responsive:true}
+/* GRAPH */
+const ctx=document.getElementById("chart").getContext("2d");
+
+const chart=new Chart(ctx,{
+type:"line",
+data:{
+labels:[],
+datasets:[{
+label:"Hız",
+data:[],
+borderColor:"#38bdf8",
+tension:.3
+}]
+},
+options:{responsive:true}
 });
 
-/* UPDATE */
+/* CSV DOWNLOAD */
+function downloadCSV(){
+  window.location="/download";
+}
+
+/* DATA FETCH */
 async function update(){
- try{
-  const r=await fetch("/last");
-  const d=await r.json();
-  if(!d)return;
+  try{
+    let r=await fetch("/last");
+    let d=await r.json();
+    if(!d) return;
 
-  speed.textContent=d.speed??"-";
-  temp.textContent=d.temp??"-";
-  volt.textContent=d.voltage??"-";
-  energy.textContent=d.energy??"-";
-  soc.textContent=d.soc??"-";
+    let speed=d.speed??0;
+    let temp=d.temp??0;
+    let voltage=d.voltage??0;
+    let energy=d.energy??0;
 
-  if(d.timestamp)
-   time.textContent=new Date(d.timestamp).toLocaleString();
+    drawGauge(speed);
 
-  gauge(d.speed);
+    document.getElementById("temp").innerHTML =
+      temp>60 ? `<span class="alert">${temp} °C ⚠</span>` : temp+" °C";
 
-  const t=new Date().toLocaleTimeString();
-  chart.data.labels.push(t);
-  chart.data.datasets[0].data.push(d.speed);
-  chart.data.datasets[1].data.push(d.temp);
+    document.getElementById("voltage").innerText=voltage+" V";
+    document.getElementById("energy").innerText=energy+" Wh";
+    document.getElementById("time").innerText=
+      new Date(d.timestamp).toLocaleString();
 
-  if(chart.data.labels.length>25){
-   chart.data.labels.shift();
-   chart.data.datasets.forEach(x=>x.data.shift());
-  }
+    chart.data.labels.push("");
+    chart.data.datasets[0].data.push(speed);
 
-  chart.update();
+    if(chart.data.labels.length>20){
+      chart.data.labels.shift();
+      chart.data.datasets[0].data.shift();
+    }
 
- }catch{}
+    chart.update();
+
+  }catch{}
 }
 
 setInterval(update,1000);
