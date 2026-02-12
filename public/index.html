@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <title>SUBU-TETRA EMT İZLEME MERKEZİ</title>
-
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
@@ -12,88 +11,134 @@ body{
  font-family:Segoe UI;
  background:#0b1220;
  color:white;
+ overflow:hidden;
 }
 
 /* HEADER */
 .header{
  display:flex;
  align-items:center;
- justify-content:center;
- gap:20px;
- padding:15px;
+ gap:15px;
+ padding:12px 20px;
  background:#020617;
  border-bottom:1px solid #1e293b;
 }
-.header img{height:55px}
-.header h1{margin:0;font-size:28px}
+
+.menuBtn{
+ font-size:28px;
+ cursor:pointer;
+}
+
+.header img{height:45px}
+.header h1{margin:0;font-size:22px}
+
+/* SIDEBAR */
+.sidebar{
+ position:fixed;
+ top:0;
+ left:-220px;
+ width:220px;
+ height:100%;
+ background:#020617;
+ border-right:1px solid #1e293b;
+ transition:.3s;
+ padding-top:80px;
+}
+
+.sidebar button{
+ width:100%;
+ background:none;
+ border:none;
+ color:white;
+ padding:15px;
+ text-align:left;
+ font-size:16px;
+ cursor:pointer;
+}
+
+.sidebar button:hover{
+ background:#1e293b;
+}
+
+.sidebar.open{left:0}
+
+/* PAGE */
+.page{
+ position:absolute;
+ top:70px;
+ left:0;
+ width:100%;
+ height:calc(100% - 70px);
+ display:none;
+ padding:15px;
+ box-sizing:border-box;
+}
+
+.page.active{display:block}
 
 /* GRID */
 .grid{
  display:grid;
  grid-template-columns:2fr 1fr 1fr;
- grid-template-rows:1fr 1fr 1fr;
  gap:18px;
- padding:18px;
- height:calc(100vh - 90px);
- box-sizing:border-box;
+ height:100%;
 }
 
-/* CARDS */
+/* CARD */
 .card{
  background:#111827;
  border-radius:12px;
- padding:15px;
- box-shadow:0 0 20px rgba(0,0,0,.6);
  display:flex;
  flex-direction:column;
  justify-content:center;
  align-items:center;
 }
 
-.title{opacity:.7;font-size:18px}
-.value{font-size:40px;color:#38bdf8}
+.title{opacity:.7}
+.value{font-size:38px;color:#38bdf8}
 
-/* SPEED */
+/* SPEED BIG */
 .speed{grid-row:span 2}
 
-/* GRAPH */
-.graph{grid-column:span 2}
+/* TIME */
+.time{grid-column:span 3}
 
-/* LOG */
-.log{
- grid-row:span 2;
- overflow:auto;
- align-items:flex-start;
- font-size:14px;
+/* CSV PAGE */
+.csvPage{
+ display:flex;
+ justify-content:center;
+ align-items:center;
+ height:100%;
 }
 
-.log div{
- width:100%;
- border-bottom:1px solid #1e293b;
- padding:4px 0;
+.downloadBtn{
+ padding:18px 40px;
+ font-size:18px;
+ border:none;
+ border-radius:10px;
+ background:#38bdf8;
+ cursor:pointer;
 }
-
-/* ALARM */
-.alarm{
- font-size:26px;
- font-weight:bold;
-}
-
-.red{color:#ef4444}
-.yellow{color:#facc15}
-.green{color:#22c55e}
 </style>
 </head>
 <body>
 
 <div class="header">
+<div class="menuBtn" onclick="toggleMenu()">☰</div>
 <img src="logo.png">
 <h1>SUBU-TETRA EMT İZLEME MERKEZİ</h1>
 </div>
 
+<div class="sidebar" id="menu">
+<button onclick="openPage('telemetry')">Telemetri</button>
+<button onclick="openPage('graph')">Grafik</button>
+<button onclick="openPage('csv')">CSV Kayıt</button>
+</div>
+
+<!-- TELEMETRY PAGE -->
+<div class="page active" id="telemetry">
 <div class="grid">
 
-<!-- SPEED -->
 <div class="card speed">
 <div class="title">HIZ</div>
 
@@ -109,131 +154,101 @@ transform="rotate(-90 100 100)"/>
 <div class="value" id="speed">-</div>
 </div>
 
-<!-- TEMP -->
-<div class="card">
-<div class="title">SICAKLIK</div>
-<div class="value" id="temp">-</div>
+<div class="card"><div class="title">SICAKLIK</div><div class="value" id="temp">-</div></div>
+<div class="card"><div class="title">GERİLİM</div><div class="value" id="volt">-</div></div>
+<div class="card"><div class="title">ENERJİ</div><div class="value" id="energy">-</div></div>
+<div class="card"><div class="title">SOC</div><div class="value" id="soc">-</div></div>
+
+<div class="card time">
+<div class="title">ZAMAN</div>
+<div class="value" id="time">-</div>
 </div>
 
-<!-- VOLT -->
-<div class="card">
-<div class="title">GERİLİM</div>
-<div class="value" id="volt">-</div>
+</div>
 </div>
 
-<!-- ENERGY -->
-<div class="card">
-<div class="title">ENERJİ</div>
-<div class="value" id="energy">-</div>
-</div>
-
-<!-- SOC -->
-<div class="card">
-<div class="title">SOC</div>
-<div class="value" id="soc">-</div>
-</div>
-
-<!-- ALARM -->
-<div class="card">
-<div class="title">DURUM</div>
-<div class="alarm green" id="alarm">NORMAL</div>
-</div>
-
-<!-- GRAPH -->
-<div class="card graph">
+<!-- GRAPH PAGE -->
+<div class="page" id="graph">
 <canvas id="chart"></canvas>
 </div>
 
-<!-- LOG -->
-<div class="card log" id="log"></div>
-
+<!-- CSV PAGE -->
+<div class="page" id="csv">
+<div class="csvPage">
+<button class="downloadBtn" onclick="window.location='/download-csv'">
+CSV DOSYASINI İNDİR
+</button>
+</div>
 </div>
 
 <script>
 
-/* ---------- GAUGE ---------- */
+/* MENU */
+function toggleMenu(){
+ menu.classList.toggle("open");
+}
+
+function openPage(id){
+ document.querySelectorAll(".page")
+ .forEach(p=>p.classList.remove("active"));
+ document.getElementById(id).classList.add("active");
+ menu.classList.remove("open");
+}
+
+/* GAUGE */
 function gauge(v){
  if(v==null)return;
  const a=(v/180)*180-90;
  needle.setAttribute("transform",`rotate(${a} 100 100)`);
 }
 
-/* ---------- CHART ---------- */
-const ctx=document.getElementById("chart");
-const chart=new Chart(ctx,{
+/* CHART */
+const chart=new Chart(document.getElementById("chart"),{
  type:"line",
  data:{
   labels:[],
   datasets:[
-   {label:"Hız",data:[],borderWidth:2},
-   {label:"Sıcaklık",data:[],borderWidth:2}
+   {label:"Hız",data:[]},
+   {label:"Sıcaklık",data:[]}
   ]
  },
- options:{responsive:true,animation:false}
+ options:{animation:false,responsive:true}
 });
 
-/* ---------- HELPERS ---------- */
-const safe=v=>v??"-";
-
-/* ---------- LOG ---------- */
-function addLog(text){
- const el=document.createElement("div");
- el.textContent=text;
- log.prepend(el);
- if(log.children.length>30)
-  log.removeChild(log.lastChild);
-}
-
-/* ---------- ALARM ---------- */
-function setAlarm(d){
- let msg="NORMAL";
- let cls="green";
-
- if(d.temp>60){msg="KRİTİK SICAKLIK";cls="red";}
- else if(d.temp>45){msg="SICAK";cls="yellow";}
- else if(d.voltage<70){msg="DÜŞÜK VOLT";cls="yellow";}
- else if(d.speed>120){msg="AŞIRI HIZ";cls="red";}
-
- alarm.textContent=msg;
- alarm.className="alarm "+cls;
-}
-
-/* ---------- UPDATE ---------- */
+/* UPDATE */
 async function update(){
  try{
   const r=await fetch("/last");
   const d=await r.json();
   if(!d)return;
 
-  speed.textContent=safe(d.speed);
-  temp.textContent=safe(d.temp);
-  volt.textContent=safe(d.voltage);
-  energy.textContent=safe(d.energy);
-  soc.textContent=safe(d.soc);
+  speed.textContent=d.speed??"-";
+  temp.textContent=d.temp??"-";
+  volt.textContent=d.voltage??"-";
+  energy.textContent=d.energy??"-";
+  soc.textContent=d.soc??"-";
+
+  if(d.timestamp)
+   time.textContent=new Date(d.timestamp).toLocaleString();
 
   gauge(d.speed);
-  setAlarm(d);
 
   const t=new Date().toLocaleTimeString();
-
   chart.data.labels.push(t);
   chart.data.datasets[0].data.push(d.speed);
   chart.data.datasets[1].data.push(d.temp);
 
-  if(chart.data.labels.length>20){
-    chart.data.labels.shift();
-    chart.data.datasets.forEach(x=>x.data.shift());
+  if(chart.data.labels.length>25){
+   chart.data.labels.shift();
+   chart.data.datasets.forEach(x=>x.data.shift());
   }
 
   chart.update();
-
-  addLog(`${t} | ${d.speed}kmh ${d.temp}°C ${d.voltage}V`);
 
  }catch{}
 }
 
 setInterval(update,1000);
-
 </script>
 </body>
 </html>
