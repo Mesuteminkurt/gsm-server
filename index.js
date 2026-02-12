@@ -14,11 +14,12 @@ let lastTelemetry = null;
 // ================= CSV DOSYA =================
 const csvFile = path.join(__dirname, "telemetry.csv");
 
-// ilk çalıştırmada CSV oluştur
+// ilk çalıştırmada CSV oluştur (Excel uyumlu UTF-8 BOM)
 if (!fs.existsSync(csvFile)) {
   fs.writeFileSync(
     csvFile,
-    "timestamp;speed;temp;voltage;energy;soc\n"
+    "\uFEFFtimestamp;speed;temp;voltage;energy;soc\n",
+    "utf8"
   );
 }
 
@@ -59,8 +60,14 @@ app.post("/telemetry", (req, res) => {
       soc
     };
 
+    // Excel uyumlu sayı formatı
     const row =
-      `${timestamp};${speed};${temp};${voltage};${energy};${soc}\n`;
+      `${timestamp};` +
+      `${speed.toFixed(2)};` +
+      `${temp.toFixed(2)};` +
+      `${voltage.toFixed(2)};` +
+      `${energy.toFixed(2)};` +
+      `${soc.toFixed(2)}\n`;
 
     fs.appendFileSync(csvFile, row);
 
@@ -90,15 +97,15 @@ app.get("/logs", (req, res) => {
 
     const json = data.map(line => {
       const [timestamp, speed, temp, voltage, energy, soc] =
-        line.split(";");
+        line.trim().split(";");
 
       return {
         timestamp,
-        speed,
-        temp,
-        voltage,
-        energy,
-        soc
+        speed: Number(speed),
+        temp: Number(temp),
+        voltage: Number(voltage),
+        energy: Number(energy),
+        soc: Number(soc)
       };
     });
 
