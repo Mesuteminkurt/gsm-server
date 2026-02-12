@@ -2,121 +2,110 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<title>SUBU-TETRA Telemetri</title>
-
+<title>SUBU-TETRA Telemetri Paneli</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 body{
-  margin:0;
-  font-family:Segoe UI;
-  background:#0f172a;
-  color:white;
-  overflow:hidden;
+margin:0;
+font-family:Inter,Segoe UI,Arial;
+background:linear-gradient(135deg,#020617,#0f172a);
+color:white;
+overflow:hidden;
 }
-
-/* MENU */
+.header{
+height:70px;
+background:linear-gradient(90deg,#0ea5e9,#38bdf8);
+display:flex;
+align-items:center;
+padding-left:80px;
+font-size:22px;
+font-weight:600;
+}
 .menu-btn{
-  position:fixed;
-  top:15px;
-  left:15px;
-  font-size:30px;
-  cursor:pointer;
-  z-index:9999;
+position:fixed;
+top:18px;
+left:20px;
+font-size:28px;
+cursor:pointer;
+z-index:9999;
 }
-
 .sidebar{
-  position:fixed;
-  top:0;
-  left:-250px;
-  width:250px;
-  height:100%;
-  background:#020617;
-  padding-top:80px;
-  transition:.3s;
-  z-index:9998;
+position:fixed;
+top:0;
+left:-260px;
+width:260px;
+height:100%;
+background:#020617;
+padding-top:90px;
+transition:.35s;
+z-index:9998;
 }
-
 .sidebar a{
-  display:block;
-  padding:15px;
-  color:white;
-  text-decoration:none;
-  font-size:18px;
+display:block;
+padding:18px;
+color:white;
+text-decoration:none;
+font-size:18px;
 }
-.sidebar a:hover{
-  background:#1e293b;
-}
-
-/* PAGES */
+.sidebar a:hover{background:#1e293b}
 .page{
-  display:none;
-  height:100vh;
-  width:100vw;
-  justify-content:center;
-  align-items:center;
-  flex-direction:column;
+display:none;
+height:calc(100vh - 70px);
+align-items:center;
+justify-content:center;
+flex-direction:column;
 }
-
-.active{
-  display:flex;
-}
-
-/* GRID */
+.active{display:flex}
 .grid{
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:20px;
-  width:90%;
-  max-width:900px;
+display:grid;
+grid-template-columns:repeat(2,1fr);
+gap:25px;
+width:90%;
+max-width:950px;
 }
-
 .card{
-  background:#1e293b;
-  padding:20px;
-  border-radius:15px;
-  text-align:center;
+background:rgba(30,41,59,.6);
+padding:25px;
+border-radius:20px;
+text-align:center;
 }
-
 .value{
-  font-size:32px;
-  margin-top:10px;
-  color:#38bdf8;
+font-size:34px;
+margin-top:10px;
+color:#38bdf8;
+font-weight:600;
 }
-
-.time{
-  grid-column:span 2;
-}
-
-/* GAUGE */
-#gauge{
-  background:#020617;
-  border-radius:50%;
-}
-
-/* TEMP ALERT */
-.alert{
-  color:red;
-  font-weight:bold;
-}
-
-/* BUTTON */
+.time{grid-column:span 2}
+.alert{color:#ef4444;font-weight:bold}
 button{
-  padding:15px 30px;
-  font-size:18px;
-  border:none;
-  border-radius:10px;
-  background:#38bdf8;
-  cursor:pointer;
+padding:15px 40px;
+font-size:18px;
+border:none;
+border-radius:12px;
+background:linear-gradient(90deg,#38bdf8,#0ea5e9);
+color:white;
+cursor:pointer;
 }
-button:hover{
-  background:#0ea5e9;
+.tableBox{
+max-height:400px;
+overflow:auto;
+background:#020617;
+padding:20px;
+border-radius:15px;
+margin-top:20px;
+width:90%;
+max-width:900px;
 }
+table{width:100%;border-collapse:collapse;}
+th,td{padding:12px;border-bottom:1px solid #1e293b;text-align:center;}
+th{color:#38bdf8}
 </style>
 </head>
 <body>
 
 <div class="menu-btn" onclick="toggleMenu()">☰</div>
+<div class="header">SUBU-TETRA Telemetri İzleme Sistemi</div>
 
 <div class="sidebar" id="menu">
 <a onclick="showPage('telemetry')">Telemetri</a>
@@ -127,23 +116,28 @@ button:hover{
 <!-- TELEMETRI -->
 <div id="telemetry" class="page active">
 
-<canvas id="gauge" width="250" height="250"></canvas>
+<canvas id="gauge" width="260" height="260"></canvas>
 
 <div class="grid">
 
 <div class="card">
-Batarya Sıcaklığı
+Sıcaklık
 <div id="temp" class="value">-</div>
 </div>
 
 <div class="card">
-Gerilim
+Voltaj
 <div id="voltage" class="value">-</div>
 </div>
 
 <div class="card">
 Enerji
 <div id="energy" class="value">-</div>
+</div>
+
+<div class="card">
+Batarya SOC
+<div id="soc" class="value">-</div>
 </div>
 
 <div class="card time">
@@ -156,114 +150,139 @@ Zaman
 
 <!-- GRAPH -->
 <div id="graph" class="page">
-<canvas id="chart" width="800" height="400"></canvas>
+<canvas id="chart" width="900" height="450"></canvas>
 </div>
 
 <!-- CSV -->
 <div id="csv" class="page">
-<h2>CSV Kayıt İndir</h2>
 <button onclick="downloadCSV()">CSV İndir</button>
+
+<div class="tableBox">
+<table id="csvTable">
+<thead>
+<tr>
+<th>Zaman</th>
+<th>Hız</th>
+<th>Sıcaklık</th>
+<th>Voltaj</th>
+<th>Enerji</th>
+<th>SOC</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+</div>
 </div>
 
 <script>
-
-/* MENU */
 function toggleMenu(){
-  let m=document.getElementById("menu");
-  m.style.left = m.style.left==="0px" ? "-250px" : "0px";
+let m=document.getElementById("menu");
+m.style.left=m.style.left==="0px"?"-260px":"0px";
 }
-
 function showPage(id){
-  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
-  document.getElementById(id).classList.add("active");
-  document.getElementById("menu").style.left="-250px";
+document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+document.getElementById(id).classList.add("active");
+document.getElementById("menu").style.left="-260px";
 }
 
 /* GAUGE */
-const gctx=document.getElementById("gauge").getContext("2d");
-
+const g=document.getElementById("gauge").getContext("2d");
 function drawGauge(speed){
-  let s = Number(speed)||0;
-  gctx.clearRect(0,0,250,250);
-
-  gctx.beginPath();
-  gctx.arc(125,125,100,Math.PI,0);
-  gctx.strokeStyle="#334155";
-  gctx.lineWidth=20;
-  gctx.stroke();
-
-  let angle=Math.PI+(s/100)*Math.PI;
-
-  gctx.beginPath();
-  gctx.arc(125,125,100,Math.PI,angle);
-  gctx.strokeStyle="#38bdf8";
-  gctx.lineWidth=20;
-  gctx.stroke();
-
-  gctx.fillStyle="white";
-  gctx.font="30px Segoe UI";
-  gctx.textAlign="center";
-  gctx.fillText(s+" km/h",125,140);
+let s=Number(speed)||0;
+g.clearRect(0,0,260,260);
+g.beginPath();
+g.arc(130,130,110,Math.PI,0);
+g.strokeStyle="#1e293b";
+g.lineWidth=22;
+g.stroke();
+let a=Math.PI+(s/120)*Math.PI;
+g.beginPath();
+g.arc(130,130,110,Math.PI,a);
+g.strokeStyle="#38bdf8";
+g.lineWidth=22;
+g.stroke();
+g.fillStyle="white";
+g.font="32px Arial";
+g.textAlign="center";
+g.fillText(s+" km/h",130,145);
 }
 
 /* GRAPH */
 const ctx=document.getElementById("chart").getContext("2d");
-
 const chart=new Chart(ctx,{
 type:"line",
-data:{
-labels:[],
-datasets:[{
-label:"Hız",
-data:[],
-borderColor:"#38bdf8",
-tension:.3
-}]
-},
-options:{responsive:true}
+data:{labels:[],datasets:[
+{label:"Hız",data:[],borderColor:"#38bdf8"},
+{label:"Sıcaklık",data:[],borderColor:"#ef4444"},
+{label:"Voltaj",data:[],borderColor:"#22c55e"},
+{label:"Enerji",data:[],borderColor:"#facc15"},
+{label:"SOC",data:[],borderColor:"#a855f7"}
+]},
+options:{responsive:true,animation:false}
 });
 
-/* CSV DOWNLOAD */
-function downloadCSV(){
-  window.location="/download";
+/* CSV */
+function downloadCSV(){window.location="/download";}
+async function loadCSV(){
+try{
+let r=await fetch("/csv");
+let data=await r.json();
+let tbody=document.querySelector("#csvTable tbody");
+tbody.innerHTML="";
+data.reverse().forEach(d=>{
+tbody.innerHTML+=`
+<tr>
+<td>${new Date(d.timestamp).toLocaleString()}</td>
+<td>${d.speed}</td>
+<td>${d.temp}</td>
+<td>${d.voltage}</td>
+<td>${d.energy}</td>
+<td>${d.soc}</td>
+</tr>`;
+});
+}catch{}
 }
 
-/* DATA FETCH */
+/* DATA */
 async function update(){
-  try{
-    let r=await fetch("/last");
-    let d=await r.json();
-    if(!d) return;
+try{
+let r=await fetch("/last");
+let d=await r.json();
+if(!d)return;
 
-    let speed=d.speed??0;
-    let temp=d.temp??0;
-    let voltage=d.voltage??0;
-    let energy=d.energy??0;
+let speed=d.speed??0;
+let temp=d.temp??0;
+let voltage=d.voltage??0;
+let energy=d.energy??0;
+let soc=d.soc??0;
 
-    drawGauge(speed);
+drawGauge(speed);
 
-    document.getElementById("temp").innerHTML =
-      temp>60 ? `<span class="alert">${temp} °C ⚠</span>` : temp+" °C";
+document.getElementById("temp").innerHTML=
+temp>60?`<span class="alert">${temp} °C ⚠</span>`:temp+" °C";
 
-    document.getElementById("voltage").innerText=voltage+" V";
-    document.getElementById("energy").innerText=energy+" Wh";
-    document.getElementById("time").innerText=
-      new Date(d.timestamp).toLocaleString();
+document.getElementById("voltage").innerText=voltage+" V";
+document.getElementById("energy").innerText=energy+" Wh";
+document.getElementById("soc").innerText=soc+" %";
+document.getElementById("time").innerText=new Date(d.timestamp).toLocaleString();
 
-    chart.data.labels.push("");
-    chart.data.datasets[0].data.push(speed);
+chart.data.labels.push("");
+chart.data.datasets[0].data.push(speed);
+chart.data.datasets[1].data.push(temp);
+chart.data.datasets[2].data.push(voltage);
+chart.data.datasets[3].data.push(energy);
+chart.data.datasets[4].data.push(soc);
 
-    if(chart.data.labels.length>20){
-      chart.data.labels.shift();
-      chart.data.datasets[0].data.shift();
-    }
-
-    chart.update();
-
-  }catch{}
+if(chart.data.labels.length>25){
+chart.data.labels.shift();
+chart.data.datasets.forEach(ds=>ds.data.shift());
 }
+chart.update();
 
+}catch{}
+}
 setInterval(update,1000);
+setInterval(loadCSV,5000);
 </script>
 </body>
 </html>
