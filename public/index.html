@@ -4,90 +4,84 @@
 <meta charset="UTF-8">
 <title>SUBU-TETRA EMT İZLEME MERKEZİ</title>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <style>
 body{
-  margin:0;
-  font-family:Arial;
-  background:#0f172a;
-  color:white;
-  display:flex;
-  flex-direction:column;
-  height:100vh;
+ margin:0;
+ font-family:Segoe UI;
+ background:#0b1220;
+ color:white;
 }
 
 /* HEADER */
 .header{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:15px;
-  padding:15px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ gap:20px;
+ padding:15px;
+ background:#020617;
+ border-bottom:1px solid #1e293b;
 }
+.header img{height:55px}
+.header h1{margin:0;font-size:28px}
 
-.header img{
-  height:60px;
-}
-
-.header h1{
-  margin:0;
-  font-size:28px;
-}
-
-/* DASHBOARD */
-.dashboard{
-  flex:1;
-  display:grid;
-  grid-template-columns:1.2fr 1fr 1fr;
-  grid-template-rows:1fr 1fr;
-  gap:20px;
-  padding:20px;
-  box-sizing:border-box;
+/* GRID */
+.grid{
+ display:grid;
+ grid-template-columns:2fr 1fr 1fr;
+ grid-template-rows:1fr 1fr 1fr;
+ gap:18px;
+ padding:18px;
+ height:calc(100vh - 90px);
+ box-sizing:border-box;
 }
 
 /* CARDS */
 .card{
-  background:#1e293b;
-  border-radius:14px;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-items:center;
-  font-size:22px;
+ background:#111827;
+ border-radius:12px;
+ padding:15px;
+ box-shadow:0 0 20px rgba(0,0,0,.6);
+ display:flex;
+ flex-direction:column;
+ justify-content:center;
+ align-items:center;
 }
 
-.value{
-  font-size:38px;
-  margin-top:10px;
-  color:#38bdf8;
+.title{opacity:.7;font-size:18px}
+.value{font-size:40px;color:#38bdf8}
+
+/* SPEED */
+.speed{grid-row:span 2}
+
+/* GRAPH */
+.graph{grid-column:span 2}
+
+/* LOG */
+.log{
+ grid-row:span 2;
+ overflow:auto;
+ align-items:flex-start;
+ font-size:14px;
 }
 
-/* SPEED BIG */
-.speed{
-  grid-row:span 2;
+.log div{
+ width:100%;
+ border-bottom:1px solid #1e293b;
+ padding:4px 0;
 }
 
-/* TIME */
-.time{
-  grid-column:span 2;
+/* ALARM */
+.alarm{
+ font-size:26px;
+ font-weight:bold;
 }
 
-/* BUTTON */
-.download{
-  padding:10px;
-  text-align:center;
-}
-
-button{
-  background:#38bdf8;
-  border:none;
-  padding:12px 30px;
-  font-size:16px;
-  border-radius:8px;
-  cursor:pointer;
-}
-button:hover{
-  background:#0ea5e9;
-}
+.red{color:#ef4444}
+.yellow{color:#facc15}
+.green{color:#22c55e}
 </style>
 </head>
 <body>
@@ -97,26 +91,18 @@ button:hover{
 <h1>SUBU-TETRA EMT İZLEME MERKEZİ</h1>
 </div>
 
-<div class="dashboard">
+<div class="grid">
 
 <!-- SPEED -->
 <div class="card speed">
-Araç Hızı
+<div class="title">HIZ</div>
 
 <svg viewBox="0 0 200 120" width="90%">
 <path d="M20 100 A80 80 0 0 1 180 100"
-stroke="#334155"
-stroke-width="15"
-fill="none"/>
-
-<line id="needle"
-x1="100" y1="100"
-x2="100" y2="30"
-stroke="#38bdf8"
-stroke-width="6"
-stroke-linecap="round"
+stroke="#334155" stroke-width="15" fill="none"/>
+<line id="needle" x1="100" y1="100" x2="100" y2="30"
+stroke="#38bdf8" stroke-width="6"
 transform="rotate(-90 100 100)"/>
-
 <circle cx="100" cy="100" r="8" fill="#38bdf8"/>
 </svg>
 
@@ -125,80 +111,129 @@ transform="rotate(-90 100 100)"/>
 
 <!-- TEMP -->
 <div class="card">
-Batarya Sıcaklığı
+<div class="title">SICAKLIK</div>
 <div class="value" id="temp">-</div>
 </div>
 
-<!-- VOLTAGE -->
+<!-- VOLT -->
 <div class="card">
-Gerilim
-<div class="value" id="voltage">-</div>
+<div class="title">GERİLİM</div>
+<div class="value" id="volt">-</div>
 </div>
 
 <!-- ENERGY -->
 <div class="card">
-Enerji
+<div class="title">ENERJİ</div>
 <div class="value" id="energy">-</div>
 </div>
 
 <!-- SOC -->
 <div class="card">
-Batarya SoC
+<div class="title">SOC</div>
 <div class="value" id="soc">-</div>
 </div>
 
-<!-- TIME -->
-<div class="card time">
-Zaman
-<div class="value" id="time">-</div>
+<!-- ALARM -->
+<div class="card">
+<div class="title">DURUM</div>
+<div class="alarm green" id="alarm">NORMAL</div>
 </div>
 
+<!-- GRAPH -->
+<div class="card graph">
+<canvas id="chart"></canvas>
 </div>
 
-<div class="download">
-<button onclick="downloadCSV()">CSV indir</button>
+<!-- LOG -->
+<div class="card log" id="log"></div>
+
 </div>
 
 <script>
-function safe(v){
-  return (v===undefined || v===null) ? "-" : v;
+
+/* ---------- GAUGE ---------- */
+function gauge(v){
+ if(v==null)return;
+ const a=(v/180)*180-90;
+ needle.setAttribute("transform",`rotate(${a} 100 100)`);
 }
 
-function updateGauge(speed){
-  if(speed==="-" ) return;
+/* ---------- CHART ---------- */
+const ctx=document.getElementById("chart");
+const chart=new Chart(ctx,{
+ type:"line",
+ data:{
+  labels:[],
+  datasets:[
+   {label:"Hız",data:[],borderWidth:2},
+   {label:"Sıcaklık",data:[],borderWidth:2}
+  ]
+ },
+ options:{responsive:true,animation:false}
+});
 
-  const angle=(speed/180)*180-90;
-  document.getElementById("needle")
-  .setAttribute("transform",`rotate(${angle} 100 100)`);
+/* ---------- HELPERS ---------- */
+const safe=v=>v??"-";
+
+/* ---------- LOG ---------- */
+function addLog(text){
+ const el=document.createElement("div");
+ el.textContent=text;
+ log.prepend(el);
+ if(log.children.length>30)
+  log.removeChild(log.lastChild);
 }
 
+/* ---------- ALARM ---------- */
+function setAlarm(d){
+ let msg="NORMAL";
+ let cls="green";
+
+ if(d.temp>60){msg="KRİTİK SICAKLIK";cls="red";}
+ else if(d.temp>45){msg="SICAK";cls="yellow";}
+ else if(d.voltage<70){msg="DÜŞÜK VOLT";cls="yellow";}
+ else if(d.speed>120){msg="AŞIRI HIZ";cls="red";}
+
+ alarm.textContent=msg;
+ alarm.className="alarm "+cls;
+}
+
+/* ---------- UPDATE ---------- */
 async function update(){
-  try{
-    const res=await fetch("/last");
-    const d=await res.json();
-    if(!d)return;
+ try{
+  const r=await fetch("/last");
+  const d=await r.json();
+  if(!d)return;
 
-    document.getElementById("speed").innerText=safe(d.speed);
-    document.getElementById("temp").innerText=safe(d.temp);
-    document.getElementById("voltage").innerText=safe(d.voltage);
-    document.getElementById("energy").innerText=safe(d.energy);
-    document.getElementById("soc").innerText=safe(d.soc);
+  speed.textContent=safe(d.speed);
+  temp.textContent=safe(d.temp);
+  volt.textContent=safe(d.voltage);
+  energy.textContent=safe(d.energy);
+  soc.textContent=safe(d.soc);
 
-    if(d.timestamp)
-      document.getElementById("time").innerText =
-        new Date(d.timestamp).toLocaleString();
+  gauge(d.speed);
+  setAlarm(d);
 
-    updateGauge(d.speed);
+  const t=new Date().toLocaleTimeString();
 
-  }catch{}
+  chart.data.labels.push(t);
+  chart.data.datasets[0].data.push(d.speed);
+  chart.data.datasets[1].data.push(d.temp);
+
+  if(chart.data.labels.length>20){
+    chart.data.labels.shift();
+    chart.data.datasets.forEach(x=>x.data.shift());
+  }
+
+  chart.update();
+
+  addLog(`${t} | ${d.speed}kmh ${d.temp}°C ${d.voltage}V`);
+
+ }catch{}
 }
 
 setInterval(update,1000);
 
-function downloadCSV(){
-  window.location="/download-csv";
-}
 </script>
-
 </body>
 </html>
