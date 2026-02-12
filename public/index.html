@@ -10,69 +10,78 @@
 body{
 margin:0;
 font-family:Inter,Segoe UI;
-background:linear-gradient(120deg,#020617,#0f172a,#020617);
+background:linear-gradient(140deg,#020617,#0f172a,#020617);
 color:white;
 overflow:hidden;
 }
 
 /* HEADER */
 .header{
-height:75px;
+height:70px;
 display:flex;
 align-items:center;
-gap:20px;
+gap:18px;
 padding:0 25px;
-background:rgba(15,23,42,.75);
-backdrop-filter:blur(10px);
+background:rgba(2,6,23,.75);
+backdrop-filter:blur(12px);
 border-bottom:1px solid rgba(255,255,255,.05);
 }
-.logo{
-height:50px;
-}
-.title{
-font-size:22px;
-font-weight:600;
-letter-spacing:.5px;
-}
+.logo{height:46px}
+.title{font-size:21px;font-weight:600}
 
 /* MENU */
 .menu-btn{
 position:fixed;
-top:22px;
-right:25px;
-font-size:26px;
+top:18px;
+right:22px;
+font-size:28px;
 cursor:pointer;
-z-index:9999;
+z-index:10001;
 }
+
+.overlay{
+position:fixed;
+inset:0;
+background:rgba(0,0,0,.55);
+opacity:0;
+pointer-events:none;
+transition:.25s;
+z-index:9998;
+}
+.overlay.show{opacity:1;pointer-events:auto}
+
 .sidebar{
 position:fixed;
 top:0;
-right:-260px;
-width:260px;
+right:-270px;
+width:270px;
 height:100%;
 background:#020617;
-padding-top:100px;
+padding-top:90px;
 transition:.35s;
-z-index:9998;
+z-index:10000;
 border-left:1px solid rgba(255,255,255,.05);
 }
+.sidebar.show{right:0}
+
 .sidebar a{
 display:block;
-padding:18px 25px;
+padding:20px 28px;
 color:#cbd5f5;
 text-decoration:none;
 font-size:17px;
-transition:.2s;
+transition:.25s;
 }
 .sidebar a:hover{
 background:#0f172a;
 color:white;
+padding-left:35px;
 }
 
 /* PAGES */
 .page{
 display:none;
-height:calc(100vh - 75px);
+height:calc(100vh - 70px);
 align-items:center;
 justify-content:center;
 flex-direction:column;
@@ -84,23 +93,23 @@ padding:20px;
 .grid{
 display:grid;
 grid-template-columns:repeat(2,1fr);
-gap:22px;
+gap:20px;
 width:95%;
-max-width:1000px;
+max-width:980px;
 }
 .card{
-background:rgba(30,41,59,.55);
-backdrop-filter:blur(14px);
-border-radius:20px;
+background:rgba(30,41,59,.6);
+backdrop-filter:blur(15px);
+border-radius:18px;
 padding:25px;
 text-align:center;
 border:1px solid rgba(255,255,255,.05);
-box-shadow:0 0 20px rgba(0,0,0,.35);
+box-shadow:0 0 25px rgba(0,0,0,.4);
 transition:.25s;
 }
 .card:hover{
 transform:translateY(-4px);
-box-shadow:0 0 30px rgba(56,189,248,.15);
+box-shadow:0 0 35px rgba(56,189,248,.18);
 }
 .value{
 font-size:34px;
@@ -109,45 +118,51 @@ color:#38bdf8;
 font-weight:600;
 }
 .time{grid-column:span 2}
-
 .alert{color:#ef4444;font-weight:700}
 
 /* BUTTON */
 button{
-padding:14px 45px;
-font-size:17px;
+padding:14px 50px;
+font-size:16px;
 border:none;
 border-radius:12px;
 background:linear-gradient(90deg,#38bdf8,#0ea5e9);
 color:white;
 cursor:pointer;
-box-shadow:0 0 20px rgba(56,189,248,.25);
+box-shadow:0 0 25px rgba(56,189,248,.35);
+transition:.25s;
 }
+button:hover{transform:scale(1.05)}
 
 /* TABLE */
 .tableBox{
 max-height:420px;
 overflow:auto;
 background:#020617;
-padding:20px;
+padding:18px;
 border-radius:15px;
 margin-top:20px;
 width:95%;
 max-width:950px;
 border:1px solid rgba(255,255,255,.05);
 }
-table{width:100%;border-collapse:collapse;}
+
+table{width:100%;border-collapse:collapse;font-size:14px}
+thead{position:sticky;top:0;background:#020617;}
+
 th,td{
-padding:12px;
+padding:11px;
 border-bottom:1px solid #1e293b;
 text-align:center;
 }
-th{color:#38bdf8}
 
-/* GAUGE CANVAS */
+th{color:#38bdf8;font-weight:600}
+tbody tr:hover{background:#0f172a}
+
+/* GAUGE */
 #gauge{
-margin-bottom:25px;
-filter:drop-shadow(0 0 20px rgba(56,189,248,.35));
+margin-bottom:20px;
+filter:drop-shadow(0 0 25px rgba(56,189,248,.4));
 }
 </style>
 </head>
@@ -159,6 +174,7 @@ filter:drop-shadow(0 0 20px rgba(56,189,248,.35));
 </div>
 
 <div class="menu-btn" onclick="toggleMenu()">☰</div>
+<div class="overlay" id="overlay" onclick="toggleMenu()"></div>
 
 <div class="sidebar" id="menu">
 <a onclick="showPage('telemetry')">Telemetri Paneli</a>
@@ -168,36 +184,14 @@ filter:drop-shadow(0 0 20px rgba(56,189,248,.35));
 
 <!-- TELEMETRİ -->
 <div id="telemetry" class="page active">
-
 <canvas id="gauge" width="260" height="260"></canvas>
 
 <div class="grid">
-
-<div class="card">
-Sıcaklık
-<div id="temp" class="value">-</div>
-</div>
-
-<div class="card">
-Voltaj
-<div id="voltage" class="value">-</div>
-</div>
-
-<div class="card">
-Enerji
-<div id="energy" class="value">-</div>
-</div>
-
-<div class="card">
-Batarya SOC
-<div id="soc" class="value">-</div>
-</div>
-
-<div class="card time">
-Zaman
-<div id="time" class="value">-</div>
-</div>
-
+<div class="card">Sıcaklık<div id="temp" class="value">-</div></div>
+<div class="card">Voltaj<div id="voltage" class="value">-</div></div>
+<div class="card">Enerji<div id="energy" class="value">-</div></div>
+<div class="card">SOC<div id="soc" class="value">-</div></div>
+<div class="card time">Zaman<div id="time" class="value">-</div></div>
 </div>
 </div>
 
@@ -228,14 +222,18 @@ Zaman
 </div>
 
 <script>
+const menu=document.getElementById("menu");
+const overlay=document.getElementById("overlay");
+
 function toggleMenu(){
-let m=document.getElementById("menu");
-m.style.right=m.style.right==="0px"?"-260px":"0px";
+menu.classList.toggle("show");
+overlay.classList.toggle("show");
 }
+
 function showPage(id){
 document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
 document.getElementById(id).classList.add("active");
-document.getElementById("menu").style.right="-260px";
+toggleMenu();
 }
 
 /* GAUGE */
@@ -247,14 +245,14 @@ g.clearRect(0,0,260,260);
 g.beginPath();
 g.arc(130,130,110,Math.PI,0);
 g.strokeStyle="#1e293b";
-g.lineWidth=22;
+g.lineWidth=20;
 g.stroke();
 
 let a=Math.PI+(s/120)*Math.PI;
 g.beginPath();
 g.arc(130,130,110,Math.PI,a);
 g.strokeStyle="#38bdf8";
-g.lineWidth=22;
+g.lineWidth=20;
 g.stroke();
 
 g.fillStyle="white";
@@ -263,7 +261,7 @@ g.textAlign="center";
 g.fillText(s+" km/h",130,145);
 }
 
-/* GRAPH */
+/* CHART */
 const ctx=document.getElementById("chart").getContext("2d");
 const chart=new Chart(ctx,{
 type:"line",
@@ -277,17 +275,21 @@ data:{labels:[],datasets:[
 options:{responsive:true,animation:false}
 });
 
-/* CSV */
+/* CSV DOWNLOAD */
 function downloadCSV(){
-  window.location="/download-csv";
+window.location="/download-csv";
 }
+
+/* CSV TABLE LOAD */
 async function loadCSV(){
 try{
-let r=await fetch("/csv");
+let r=await fetch("/logs");
 let data=await r.json();
+
 let tbody=document.querySelector("#csvTable tbody");
 tbody.innerHTML="";
-data.reverse().forEach(d=>{
+
+data.forEach(d=>{
 tbody.innerHTML+=`
 <tr>
 <td>${new Date(d.timestamp).toLocaleString()}</td>
@@ -301,35 +303,29 @@ tbody.innerHTML+=`
 }catch{}
 }
 
-/* DATA */
+/* DATA UPDATE */
 async function update(){
 try{
 let r=await fetch("/last");
 let d=await r.json();
-if(!d)return;
+if(!d.timestamp)return;
 
-let speed=d.speed??0;
-let temp=d.temp??0;
-let voltage=d.voltage??0;
-let energy=d.energy??0;
-let soc=d.soc??0;
-
-drawGauge(speed);
+drawGauge(d.speed);
 
 document.getElementById("temp").innerHTML=
-temp>60?`<span class="alert">${temp} °C ⚠</span>`:temp+" °C";
+d.temp>60?`<span class="alert">${d.temp} °C ⚠</span>`:d.temp+" °C";
 
-document.getElementById("voltage").innerText=voltage+" V";
-document.getElementById("energy").innerText=energy+" Wh";
-document.getElementById("soc").innerText=soc+" %";
+document.getElementById("voltage").innerText=d.voltage+" V";
+document.getElementById("energy").innerText=d.energy+" Wh";
+document.getElementById("soc").innerText=d.soc+" %";
 document.getElementById("time").innerText=new Date(d.timestamp).toLocaleString();
 
 chart.data.labels.push("");
-chart.data.datasets[0].data.push(speed);
-chart.data.datasets[1].data.push(temp);
-chart.data.datasets[2].data.push(voltage);
-chart.data.datasets[3].data.push(energy);
-chart.data.datasets[4].data.push(soc);
+chart.data.datasets[0].data.push(d.speed);
+chart.data.datasets[1].data.push(d.temp);
+chart.data.datasets[2].data.push(d.voltage);
+chart.data.datasets[3].data.push(d.energy);
+chart.data.datasets[4].data.push(d.soc);
 
 if(chart.data.labels.length>25){
 chart.data.labels.shift();
@@ -339,6 +335,7 @@ chart.update();
 
 }catch{}
 }
+
 setInterval(update,1000);
 setInterval(loadCSV,5000);
 </script>

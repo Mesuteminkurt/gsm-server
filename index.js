@@ -49,7 +49,9 @@ app.post("/telemetry", (req, res) => {
     energy = Number(energy);
     soc = Number(soc);
 
-    const timestamp = new Date().toISOString();
+    const timestamp = new Date().toLocaleString("sv-SE", {
+      timeZone: "Europe/Istanbul"
+    }).replace(" ", "T");
 
     lastTelemetry = {
       timestamp,
