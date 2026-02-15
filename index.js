@@ -76,8 +76,8 @@ app.post("/telemetry", (req, res) => {
     };
 
     // CSV satır
-    const row =
-`${timestamp};${speed};${temp};${voltage};${energy};${soc}\n`;
+const row =
+`"${timestamp}";="${speed}";="${temp}";="${voltage}";="${energy}";="${soc}"\n`;
 
     fs.appendFileSync(csvFile, row);
 
