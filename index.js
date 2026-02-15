@@ -77,7 +77,7 @@ app.post("/telemetry", (req, res) => {
 
     // CSV satır
 const row =
-`"${timestamp}";="${speed}";="${temp}";="${voltage}";="${energy}";="${soc}"\n`;
+`${timestamp};="${speed}";="${temp}";="${voltage}";="${energy}";="${soc}"\n`;
 
     fs.appendFileSync(csvFile, row);
 
@@ -107,15 +107,19 @@ app.get("/logs", (req, res) => {
 
     const json = data.map(line => {
       const [timestamp, speed, temp, voltage, energy, soc] =
-        line.split(";");
+      line.split(";");
+
+      const clean = v => Number(
+      String(v).replace(/"|=/g,"").trim()
+      );
 
       return {
-        timestamp,
-        speed: Number(speed),
-        temp: Number(temp),
-        voltage: Number(voltage),
-        energy: Number(energy),
-        soc: Number(soc)
+      timestamp,
+      speed: clean(speed),
+      temp: clean(temp),
+      voltage: clean(voltage),
+      energy: clean(energy),
+      soc: clean(soc)
       };
     });
 
