@@ -8,13 +8,15 @@ app.use(express.static("public"));
 
 const PORT = process.env.PORT || 3000;
 
-// ================= RAM SON VERİ =================
+// ================= RAM CACHE =================
 let lastTelemetry = null;
+let ramLogs = [];
+const MAX_RAM = 500;
 
 // ================= CSV DOSYA =================
 const csvFile = path.join(__dirname, "telemetry.csv");
 
-// ilk çalıştırmada CSV oluştur (Excel garanti format)
+// CSV oluştur (Excel uyumlu)
 if (!fs.existsSync(csvFile)) {
   fs.writeFileSync(
     csvFile,
@@ -23,11 +25,10 @@ if (!fs.existsSync(csvFile)) {
   );
 }
 
-// ================= ZAMAN FORMAT =================
-function getTimestamp() {
-  const d = new Date();
-
-  const pad = n => String(n).padStart(2,"0");
+// ================= ZAMAN =================
+function getTimestamp(){
+  const d=new Date();
+  const pad=n=>String(n).padStart(2,"0");
 
   return (
     d.getFullYear()+"-"+
@@ -40,110 +41,73 @@ function getTimestamp() {
 }
 
 // ================= TELEMETRY POST =================
-app.post("/telemetry", (req, res) => {
-  try {
-    let { speed, temp, voltage, energy, soc } = req.body;
+app.post("/telemetry",(req,res)=>{
+  try{
 
-    if (
-      speed == null ||
-      temp == null ||
-      voltage == null ||
-      energy == null ||
-      soc == null
-    ) {
-      return res.status(400).json({
-        status: "error",
-        message: "Eksik veri alanı"
-      });
-    }
+    let { speed,temp,voltage,energy,soc } = req.body;
 
-    // number'a çevir
-    speed = Number(speed);
-    temp = Number(temp);
-    voltage = Number(voltage);
-    energy = Number(energy);
-    soc = Number(soc);
+    if([speed,temp,voltage,energy,soc].some(v=>v==null))
+      return res.status(400).json({error:"Eksik veri"});
 
-    const timestamp = getTimestamp();
+    // number convert
+    speed=Number(speed);
+    temp=Number(temp);
+    voltage=Number(voltage);
+    energy=Number(energy);
+    soc=Number(soc);
 
-    lastTelemetry = {
-      timestamp,
-      speed,
-      temp,
-      voltage,
-      energy,
-      soc
-    };
+    const timestamp=getTimestamp();
 
-    // CSV satır
-const row =
-`${timestamp};="${speed}";="${temp}";="${voltage}";="${energy}";="${soc}"\n`;
+    const data={timestamp,speed,temp,voltage,energy,soc};
 
-    fs.appendFileSync(csvFile, row);
+    lastTelemetry=data;
 
-    res.json({ status: "ok" });
+    // RAM cache
+    ramLogs.push(data);
+    if(ramLogs.length>MAX_RAM)
+      ramLogs.shift();
 
-  } catch (err) {
-    console.error("POST ERROR:", err);
-    res.status(500).json({ status: "server_error" });
+    // CSV satır (Excel uyumlu saf sayı)
+    const row=
+`${timestamp};${speed};${temp};${voltage};${energy};${soc}\n`;
+
+    // async yaz → site donmaz
+    fs.appendFile(csvFile,row,err=>{
+      if(err) console.error("CSV write error:",err);
+    });
+
+    res.json({status:"ok"});
+
+  }catch(e){
+    console.error(e);
+    res.status(500).json({error:"server"});
   }
 });
 
 // ================= SON VERİ =================
-app.get("/last", (req, res) => {
-  if (!lastTelemetry)
-    return res.json({ status: "no_data" });
-
-  res.json(lastTelemetry);
+app.get("/last",(req,res)=>{
+  res.json(lastTelemetry || {status:"no_data"});
 });
 
 // ================= LOG LİSTESİ =================
-app.get("/logs", (req, res) => {
-  try {
-    const data = fs.readFileSync(csvFile, "utf8")
-      .split("\n")
-      .slice(2) // sep + header atla
-      .filter(l => l.trim() !== "");
-
-    const json = data.map(line => {
-      const [timestamp, speed, temp, voltage, energy, soc] =
-      line.split(";");
-
-      const clean = v => Number(
-      String(v).replace(/"|=/g,"").trim()
-      );
-
-      return {
-      timestamp,
-      speed: clean(speed),
-      temp: clean(temp),
-      voltage: clean(voltage),
-      energy: clean(energy),
-      soc: clean(soc)
-      };
-    });
-
-    res.json(json.reverse());
-
-  } catch (err) {
-    res.status(500).send("Log okunamadı");
-  }
+app.get("/logs",(req,res)=>{
+  res.json(ramLogs.slice().reverse());
 });
 
 // ================= CSV DOWNLOAD =================
-app.get("/download-csv", (req, res) => {
-  if (!fs.existsSync(csvFile))
+app.get("/download-csv",(req,res)=>{
+  if(!fs.existsSync(csvFile))
     return res.status(404).send("CSV bulunamadı");
 
-  res.download(csvFile, "telemetry.csv");
+  res.download(csvFile,"telemetry.csv");
 });
 
-// ================= HEALTH CHECK =================
-app.get("/ping", (req, res) => {
+// ================= HEALTH =================
+app.get("/ping",(req,res)=>{
   res.send("OK");
 });
 
 // ================= SERVER =================
-app.listen(PORT, () => {
-  console.log("Server running on port", PORT);
+app.listen(PORT,()=>{
+  console.log("Server running →",PORT);
 });
