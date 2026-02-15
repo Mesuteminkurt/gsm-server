@@ -64,12 +64,7 @@ app.post("/telemetry", (req, res) => {
 
     // Excel uyumlu sayı formatı
     const row =
-      `${timestamp};` +
-      `${speed.toFixed(2)};` +
-      `${temp.toFixed(2)};` +
-      `${voltage.toFixed(2)};` +
-      `${energy.toFixed(2)};` +
-      `${soc.toFixed(2)}\n`;
+`"${timestamp}";${speed};${temp};${voltage};${energy};${soc}\n`;
 
     fs.appendFileSync(csvFile, row);
 
