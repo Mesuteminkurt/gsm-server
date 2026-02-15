@@ -68,8 +68,8 @@ app.post("/telemetry",(req,res)=>{
       ramLogs.shift();
 
     // CSV satır (Excel uyumlu saf sayı)
-    const row=
-`${timestamp};${speed};${temp};${voltage};${energy};${soc}\n`;
+const row =
+`${timestamp};="${speed}";="${temp}";="${voltage}";="${energy}";="${soc}"\n`;
 
     // async yaz → site donmaz
     fs.appendFile(csvFile,row,err=>{
