@@ -14,12 +14,28 @@ let lastTelemetry = null;
 // ================= CSV DOSYA =================
 const csvFile = path.join(__dirname, "telemetry.csv");
 
-// ilk çalıştırmada CSV oluştur (Excel uyumlu UTF-8 BOM)
+// ilk çalıştırmada CSV oluştur (Excel garanti format)
 if (!fs.existsSync(csvFile)) {
   fs.writeFileSync(
     csvFile,
-    "\uFEFFtimestamp;speed;temp;voltage;energy;soc\n",
+    "\uFEFFsep=;\ntimestamp;speed;temp;voltage;energy;soc\n",
     "utf8"
+  );
+}
+
+// ================= ZAMAN FORMAT =================
+function getTimestamp() {
+  const d = new Date();
+
+  const pad = n => String(n).padStart(2,"0");
+
+  return (
+    d.getFullYear()+"-"+
+    pad(d.getMonth()+1)+"-"+
+    pad(d.getDate())+" "+
+    pad(d.getHours())+":"+
+    pad(d.getMinutes())+":"+
+    pad(d.getSeconds())
   );
 }
 
@@ -28,7 +44,6 @@ app.post("/telemetry", (req, res) => {
   try {
     let { speed, temp, voltage, energy, soc } = req.body;
 
-    // veri doğrulama
     if (
       speed == null ||
       temp == null ||
@@ -42,16 +57,14 @@ app.post("/telemetry", (req, res) => {
       });
     }
 
-    // number'a çevir (STM bazen string gönderir)
+    // number'a çevir
     speed = Number(speed);
     temp = Number(temp);
     voltage = Number(voltage);
     energy = Number(energy);
     soc = Number(soc);
 
-    const timestamp = new Date().toLocaleString("sv-SE", {
-      timeZone: "Europe/Istanbul"
-    }).replace(" ", "T");
+    const timestamp = getTimestamp();
 
     lastTelemetry = {
       timestamp,
@@ -62,9 +75,9 @@ app.post("/telemetry", (req, res) => {
       soc
     };
 
-    // Excel uyumlu sayı formatı
+    // CSV satır
     const row =
-`"${timestamp}";${speed};${temp};${voltage};${energy};${soc}\n`;
+`${timestamp};${speed};${temp};${voltage};${energy};${soc}\n`;
 
     fs.appendFileSync(csvFile, row);
 
@@ -89,12 +102,12 @@ app.get("/logs", (req, res) => {
   try {
     const data = fs.readFileSync(csvFile, "utf8")
       .split("\n")
-      .slice(1)
+      .slice(2) // sep + header atla
       .filter(l => l.trim() !== "");
 
     const json = data.map(line => {
       const [timestamp, speed, temp, voltage, energy, soc] =
-        line.trim().split(";");
+        line.split(";");
 
       return {
         timestamp,
