@@ -28,18 +28,18 @@ if (!fs.existsSync(csvFile)) {
   );
 }
 
-// ================= ZAMAN =================
+// ================= ZAMAN (GMT+3) =================
 function getTimestamp(){
-  const d=new Date();
+  const d=new Date(Date.now() + 3 * 60 * 60 * 1000);
   const pad=n=>String(n).padStart(2,"0");
 
   return (
-    d.getFullYear()+"-"+
-    pad(d.getMonth()+1)+"-"+
-    pad(d.getDate())+" "+
-    pad(d.getHours())+":"+
-    pad(d.getMinutes())+":"+
-    pad(d.getSeconds())
+    d.getUTCFullYear()+"-"+
+    pad(d.getUTCMonth()+1)+"-"+
+    pad(d.getUTCDate())+" "+
+    pad(d.getUTCHours())+":"+
+    pad(d.getUTCMinutes())+":"+
+    pad(d.getUTCSeconds())
   );
 }
 
