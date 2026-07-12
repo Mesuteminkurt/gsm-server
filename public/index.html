@@ -280,35 +280,73 @@ function downloadCSV(){
 window.location="/download-csv";
 }
 
-/* CSV TABLE LOAD */
+/* ---- PERFORMANCE FIX: Track last data to avoid redundant updates ---- */
+let logVersion = -1;
+
+/* CSV TABLE LOAD — DocumentFragment ile hızlı DOM oluşturma */
 async function loadCSV(){
 try{
-let r=await fetch("/logs");
-let data=await r.json();
+let r=await fetch("/logs?v=" + logVersion);
+
+// 204 = veri değişmemiş, DOM'a dokunma
+if(r.status === 204) return;
+
+let json=await r.json();
+logVersion = json.version;
+let data = json.data;
 
 let tbody=document.querySelector("#csvTable tbody");
-tbody.innerHTML="";
 
-data.forEach(d=>{
-tbody.innerHTML+=`
-<tr>
-<td>${new Date(d.timestamp).toLocaleString()}</td>
-<td>${d.speed}</td>
-<td>${d.temp}</td>
-<td>${d.voltage}</td>
-<td>${d.energy}</td>
-<td>${d.soc}</td>
-</tr>`;
-});
+// DocumentFragment ile tek seferde DOM'a ekle (innerHTML+= yerine)
+let frag = document.createDocumentFragment();
+for(let i = 0; i < data.length; i++){
+  let d = data[i];
+  let tr = document.createElement("tr");
+
+  let td1 = document.createElement("td");
+  td1.textContent = new Date(d.timestamp).toLocaleString();
+  tr.appendChild(td1);
+
+  let td2 = document.createElement("td");
+  td2.textContent = d.speed;
+  tr.appendChild(td2);
+
+  let td3 = document.createElement("td");
+  td3.textContent = d.temp;
+  tr.appendChild(td3);
+
+  let td4 = document.createElement("td");
+  td4.textContent = d.voltage;
+  tr.appendChild(td4);
+
+  let td5 = document.createElement("td");
+  td5.textContent = d.energy;
+  tr.appendChild(td5);
+
+  let td6 = document.createElement("td");
+  td6.textContent = d.soc;
+  tr.appendChild(td6);
+
+  frag.appendChild(tr);
+}
+tbody.innerHTML = "";
+tbody.appendChild(frag);
+
 }catch{}
 }
 
-/* DATA UPDATE */
+/* DATA UPDATE — Sadece değişen veriyi güncelle */
+let prevTimestamp = null;
+
 async function update(){
 try{
 let r=await fetch("/last");
 let d=await r.json();
-if(!d.timestamp)return;
+if(!d.timestamp) return;
+
+// Aynı veri geliyorsa DOM güncellemesini atla
+if(d.timestamp === prevTimestamp) return;
+prevTimestamp = d.timestamp;
 
 drawGauge(d.speed);
 
@@ -327,9 +365,9 @@ chart.data.datasets[2].data.push(d.voltage);
 chart.data.datasets[3].data.push(d.energy);
 chart.data.datasets[4].data.push(d.soc);
 
-if(chart.data.labels.length>25){
-chart.data.labels.shift();
-chart.data.datasets.forEach(ds=>ds.data.shift());
+if(chart.data.labels.length>50){
+  chart.data.labels.shift();
+  chart.data.datasets.forEach(ds=>ds.data.shift());
 }
 chart.update();
 

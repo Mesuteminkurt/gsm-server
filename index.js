@@ -1,8 +1,10 @@
 const express = require("express");
+const cors = require("cors");
 const fs = require("fs");
 const path = require("path");
 
 const app = express();
+app.use(cors());
 app.use(express.json());
 app.use(express.static("public"));
 
@@ -11,6 +13,7 @@ const PORT = process.env.PORT || 3000;
 // ================= RAM CACHE =================
 let lastTelemetry = null;
 let ramLogs = [];
+let logVersion = 0;          // her POST'ta artar, client değişim takibi yapabilir
 const MAX_RAM = 500;
 
 // ================= CSV DOSYA =================
@@ -61,6 +64,7 @@ app.post("/telemetry",(req,res)=>{
     const data={timestamp,speed,temp,voltage,energy,soc};
 
     lastTelemetry=data;
+    logVersion++;
 
     // RAM cache
     ramLogs.push(data);
@@ -90,8 +94,22 @@ app.get("/last",(req,res)=>{
 });
 
 // ================= LOG LİSTESİ =================
+let cachedReversed = [];
+let cachedVersion = -1;
+
 app.get("/logs",(req,res)=>{
-  res.json(ramLogs.slice().reverse());
+  // Client version parametresi varsa ve değişmemişse 204 döndür
+  const clientVer = parseInt(req.query.v);
+  if(!isNaN(clientVer) && clientVer === logVersion){
+    return res.status(204).end();
+  }
+
+  // Sadece değiştiyse yeniden ters çevir
+  if(cachedVersion !== logVersion){
+    cachedReversed = ramLogs.slice().reverse();
+    cachedVersion = logVersion;
+  }
+  res.json({ version: logVersion, data: cachedReversed });
 });
 
 // ================= CSV DOWNLOAD =================
