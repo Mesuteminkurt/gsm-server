@@ -47,21 +47,16 @@ function getTimestamp(){
 app.post("/telemetry",(req,res)=>{
   try{
 
-    let { speed,temp,voltage,energy,soc } = req.body;
-
-    if([speed,temp,voltage,energy,soc].some(v=>v==null))
-      return res.status(400).json({error:"Eksik veri"});
-
-    // number convert
-    speed=Number(speed);
-    temp=Number(temp);
-    voltage=Number(voltage);
-    energy=Number(energy);
-    soc=Number(soc);
+    let dataBody = req.body;
+    let speed=Number(dataBody.sp ?? dataBody.speed ?? 0);
+    let temp=Number(dataBody.t ?? dataBody.temp ?? 0);
+    let voltage=Number(dataBody.v ?? dataBody.voltage ?? 0);
+    let energy=Number(dataBody.e ?? dataBody.energy ?? 0);
+    let soc=Number(dataBody.s ?? dataBody.soc ?? 0);
 
     const timestamp=getTimestamp();
 
-    const data={timestamp,speed,temp,voltage,energy,soc};
+    const data={ timestamp, speed, temp, voltage, energy, soc, ...dataBody };
 
     lastTelemetry=data;
     logVersion++;
