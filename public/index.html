@@ -94,27 +94,26 @@ overflow-y:auto;
 .grid{
 display:grid;
 grid-template-columns:repeat(3,1fr);
-gap:12px;
-width:95%;
-max-width:980px;
+gap:16px;
+width:100%;
 }
 .card{
 background:rgba(30,41,59,.6);
 backdrop-filter:blur(15px);
-border-radius:14px;
-padding:12px;
+border-radius:16px;
+padding:18px;
 text-align:center;
 border:1px solid rgba(255,255,255,.05);
-box-shadow:0 0 15px rgba(0,0,0,.3);
+box-shadow:0 0 18px rgba(0,0,0,.3);
 transition:.25s;
 }
 .card:hover{
 transform:translateY(-4px);
-box-shadow:0 0 25px rgba(56,189,248,.18);
+box-shadow:0 0 28px rgba(56,189,248,.18);
 }
 .value{
-font-size:24px;
-margin-top:6px;
+font-size:28px;
+margin-top:8px;
 color:#38bdf8;
 font-weight:600;
 }
@@ -209,17 +208,17 @@ filter:drop-shadow(0 0 25px rgba(56,189,248,.4));
 /* BATTERY EXTRA */
 .cells-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 12px;
 }
 .cell-box {
   background: rgba(15,23,42,.6);
   border: 1px solid rgba(255,255,255,.05);
-  border-radius: 8px; padding: 8px; text-align: center;
+  border-radius: 10px; padding: 12px; text-align: center;
 }
-.cell-title { font-size: 11px; color: #94a3b8; }
-.cell-val { font-size: 13px; font-weight: bold; color: #38bdf8; margin-top: 5px; }
-.temps-grid { display: flex; flex-direction: column; gap: 10px; }
+.cell-title { font-size: 13px; color: #94a3b8; }
+.cell-val { font-size: 16px; font-weight: bold; color: #38bdf8; margin-top: 6px; }
+.temps-grid { display: flex; flex-direction: column; gap: 12px; }
 </style>
 </head>
 <body>
@@ -242,8 +241,8 @@ filter:drop-shadow(0 0 25px rgba(56,189,248,.4));
 <!-- TELEMETRİ -->
 <div id="telemetry" class="page active">
 
-<div style="display:flex; flex-wrap:nowrap; gap:20px; width:95%; max-width:1050px; align-items:center; justify-content:center; margin-bottom:10px;">
-  <div style="flex: 0 0 200px;">
+<div style="display:flex; flex-wrap:nowrap; gap:25px; width:95%; max-width:1300px; align-items:center; justify-content:center; margin-bottom:15px;">
+  <div style="flex: 0 0 240px;">
     <canvas id="gauge" width="260" height="260" style="width:100%; height:100%; filter:drop-shadow(0 0 15px rgba(56,189,248,.4));"></canvas>
   </div>
   
@@ -253,15 +252,15 @@ filter:drop-shadow(0 0 25px rgba(56,189,248,.4));
     <div class="card">Enerji<div id="energy" class="value">-</div></div>
     <div class="card">SOC<div id="soc" class="value">-</div></div>
     <div class="card">Bat. Akım<div id="bat_current" class="value">-</div></div>
-    <div class="card">İzolasyon<div class="value" style="font-size:18px"><span id="iso_n">-</span> (n) | <span id="iso_p">-</span> (p)</div></div>
+    <div class="card">İzolasyon<div class="value" style="font-size:22px"><span id="iso_n">-</span> (n) | <span id="iso_p">-</span> (p)</div></div>
     <div class="card time">Zaman<div id="time" class="value">-</div></div>
   </div>
 </div>
 
-<div style="width:95%; max-width:1050px; text-align:left; margin-top:5px;">
-  <h3 style="color:#cbd5f5; margin:0 0 8px 5px; font-size:15px;">Sistem ve Uyarı Durumları</h3>
+<div style="width:95%; max-width:1300px; text-align:left; margin-top:10px;">
+  <h3 style="color:#cbd5f5; margin:0 0 10px 5px; font-size:16px;">Sistem ve Uyarı Durumları</h3>
 </div>
-<div class="status-grid" style="max-width:1050px;">
+<div class="status-grid" style="max-width:1300px;">
   <div class="status-card">
     <div class="status-header">
       <div class="icon" style="color:#4ade80;">⚠</div>
@@ -397,7 +396,8 @@ data:{labels:[],datasets:[
 {label:"Sıcaklık",data:[],borderColor:"#ef4444"},
 {label:"Voltaj",data:[],borderColor:"#22c55e"},
 {label:"Enerji",data:[],borderColor:"#facc15"},
-{label:"SOC",data:[],borderColor:"#a855f7"}
+{label:"SOC",data:[],borderColor:"#a855f7"},
+{label:"Bat. Akım",data:[],borderColor:"#fb923c"}
 ]},
 options:{responsive:true,animation:false}
 });
@@ -558,6 +558,7 @@ chart.data.datasets[1].data.push(d.temp);
 chart.data.datasets[2].data.push(d.voltage);
 chart.data.datasets[3].data.push(d.energy);
 chart.data.datasets[4].data.push(d.soc);
+chart.data.datasets[5].data.push(d.ba || 0);
 
 if(chart.data.labels.length>50){
   chart.data.labels.shift();
