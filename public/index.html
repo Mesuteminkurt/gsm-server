@@ -482,7 +482,7 @@ d.temp>60?`<span class="alert">${d.temp} °C ⚠</span>`:d.temp+" °C";
 
 document.getElementById("voltage").innerText=d.voltage+" V";
 document.getElementById("energy").innerText=d.energy+" Wh";
-document.getElementById("soc").innerText=(d.soc !== undefined && d.soc !== null ? Number(d.soc).toFixed(2) : "-")+" %";
+document.getElementById("soc").innerText=(d.soc !== undefined && d.soc !== null ? Number(d.soc).toFixed(1) : "-")+" %";
 document.getElementById("time").innerText=new Date(d.timestamp).toLocaleString();
 
 // Düşük Hücre Gerilimi (st1)
@@ -545,7 +545,7 @@ document.getElementById("iso_p").innerText = (d.ip !== undefined ? d.ip : "-");
 // 28 Hücre ve 5 Sıcaklık
 for(let i=1; i<=28; i++) {
   let val = d["c"+i];
-  if(val !== undefined && val !== null) document.getElementById("c"+i).innerText = Number(val).toFixed(4) + " V";
+  if(val !== undefined && val !== null) document.getElementById("c"+i).innerText = Number(val).toFixed(2) + " V";
 }
 for(let i=1; i<=5; i++) {
   let val = d["bt"+i];
