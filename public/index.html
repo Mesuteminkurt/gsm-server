@@ -303,18 +303,20 @@ filter:drop-shadow(0 0 25px rgba(56,189,248,.4));
 
 <!-- CSV -->
 <div id="csv" class="page">
-<button onclick="downloadCSV()">CSV İndir</button>
+<div style="display:flex; gap:10px; margin-bottom:10px;">
+  <select id="csvFileSelect" style="padding:10px; border-radius:8px; background:#1e293b; color:white; border:1px solid rgba(255,255,255,0.2);"></select>
+  <button onclick="downloadCSV()">Seçili CSV'yi İndir</button>
+</div>
 
 <div class="tableBox">
 <table id="csvTable">
 <thead>
 <tr>
-<th>Zaman</th>
-<th>Hız</th>
-<th>Sıcaklık</th>
-<th>Voltaj</th>
-<th>Enerji</th>
-<th>SOC</th>
+<th>Zaman (ms)</th>
+<th>Hız (km/h)</th>
+<th>Max Sıcaklık (°C)</th>
+<th>Voltaj (V)</th>
+<th>Kalan Enerji (Wh)</th>
 </tr>
 </thead>
 <tbody></tbody>
@@ -404,7 +406,37 @@ options:{responsive:true,animation:false}
 
 /* CSV DOWNLOAD */
 function downloadCSV(){
-window.location="/download-csv";
+  const file = document.getElementById("csvFileSelect").value;
+  if(file){
+    window.location="/download-csv/" + file;
+  }
+}
+
+async function loadCsvList() {
+  try {
+    let r = await fetch("/list-csv");
+    let files = await r.json();
+    let select = document.getElementById("csvFileSelect");
+    select.innerHTML = "";
+    files.forEach(f => {
+      let opt = document.createElement("option");
+      opt.value = f;
+      opt.textContent = f;
+      select.appendChild(opt);
+    });
+    if(files.length > 0) {
+      select.value = files[files.length - 1]; // select the newest
+    }
+  } catch(e) {}
+}
+
+// Call loadCsvList dynamically when CSV page is opened
+const originalShowPage = showPage;
+showPage = function(id) {
+  originalShowPage(id);
+  if(id === 'csv') {
+    loadCsvList();
+  }
 }
 
 /* ---- PERFORMANCE FIX: Track last data to avoid redundant updates ---- */
@@ -431,7 +463,7 @@ for(let i = 0; i < data.length; i++){
   let tr = document.createElement("tr");
 
   let td1 = document.createElement("td");
-  td1.textContent = new Date(d.timestamp).toLocaleString();
+  td1.textContent = d.zaman_ms !== undefined ? d.zaman_ms : "-";
   tr.appendChild(td1);
 
   let td2 = document.createElement("td");
@@ -449,10 +481,6 @@ for(let i = 0; i < data.length; i++){
   let td5 = document.createElement("td");
   td5.textContent = d.energy;
   tr.appendChild(td5);
-
-  let td6 = document.createElement("td");
-  td6.textContent = d.soc;
-  tr.appendChild(td6);
 
   frag.appendChild(tr);
 }

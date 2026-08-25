@@ -17,16 +17,24 @@ let logVersion = 0;          // her POST'ta artar, client değişim takibi yapab
 const MAX_RAM = 500;
 
 // ================= CSV DOSYA =================
-const csvFile = path.join(__dirname, "telemetry.csv");
+let currentCsvFile = "";
+let last_zaman_ms = -1;
 
-// CSV oluştur (Excel uyumlu)
-if (!fs.existsSync(csvFile)) {
+function createNewCsvFile() {
+  const d = new Date(Date.now() + 3 * 60 * 60 * 1000);
+  const pad = n => String(n).padStart(2, "0");
+  const timeStr = `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}_${pad(d.getUTCHours())}-${pad(d.getUTCMinutes())}-${pad(d.getUTCSeconds())}`;
+  
+  currentCsvFile = path.join(__dirname, `SUBUTETRA-EMT_telemetry_${timeStr}.csv`);
   fs.writeFileSync(
-    csvFile,
-    "\uFEFFsep=;\ntimestamp;speed;temp;voltage;energy;soc\n",
+    currentCsvFile,
+    "\uFEFFsep=;\nzaman_ms;hız;batarya max sıcaklık;batarya voltajı;kalan enerji\n",
     "utf8"
   );
 }
+
+// İlk başlangıçta bir dosya oluştur
+createNewCsvFile();
 
 // ================= ZAMAN (GMT+3) =================
 function getTimestamp(){
@@ -48,6 +56,17 @@ app.post("/telemetry",(req,res)=>{
   try{
 
     let dataBody = req.body;
+    let zaman_ms=Number(dataBody.zaman_ms ?? 0);
+
+    // Araç yeniden başlatıldıysa (yeni zaman_ms < eski zaman_ms)
+    // tolerans bırakmak için 0'dan büyükse şartı da eklenebilir, ancak genelde araç açıldığında millis düşük başlar.
+    if (last_zaman_ms !== -1 && zaman_ms < last_zaman_ms) {
+      createNewCsvFile();
+      ramLogs = []; // UI'daki geçmiş veriyi temizle
+      logVersion++;
+    }
+    last_zaman_ms = zaman_ms;
+
     let speed=Number(dataBody.sp ?? dataBody.speed ?? 0);
     let temp=Number(dataBody.t ?? dataBody.temp ?? 0);
     let voltage=Number(dataBody.v ?? dataBody.voltage ?? 0);
@@ -56,27 +75,60 @@ app.post("/telemetry",(req,res)=>{
 
     const timestamp=getTimestamp();
 
-    const data={ timestamp, speed, temp, voltage, energy, soc, ...dataBody };
+    const data={ timestamp, zaman_ms, speed, temp, voltage, energy, soc, ...dataBody };
 
     lastTelemetry=data;
     logVersion++;
 
-    // RAM cache
-    ramLogs.push(data);
+    // RAM cache (sadece istenen veriler)
+    ramLogs.push({ zaman_ms, speed, temp, voltage, energy });
     if(ramLogs.length>MAX_RAM)
       ramLogs.shift();
 
     // CSV satır (Excel uyumlu saf sayı)
 const row =
-`${timestamp};="${speed}";="${temp}";="${voltage}";="${energy}";="${soc}"\n`;
+`="${zaman_ms}";="${speed}";="${temp}";="${voltage}";="${energy}"\n`;
 
     // async yaz → site donmaz
-    fs.appendFile(csvFile,row,err=>{
+    fs.appendFile(currentCsvFile,row,err=>{
       if(err) console.error("CSV write error:",err);
     });
 
     res.json({status:"ok"});
 
+  }catch(e){
+    console.error(e);
+    res.status(500).json({error:"server"});
+  }
+});
+
+// ================= BULK (ÇEVRİMDIŞI) TELEMETRY POST =================
+app.post("/telemetry-bulk",(req,res)=>{
+  try{
+    let bulkData = req.body;
+    if(!Array.isArray(bulkData)) return res.status(400).json({error:"Array expected"});
+
+    bulkData.forEach(item => {
+      let zaman_ms = Number(item.zaman_ms ?? 0);
+      let speed = Number(item.sp ?? 0);
+      let temp = Number(item.t ?? 0);
+      let voltage = Number(item.v ?? 0);
+      let energy = Number(item.e ?? 0);
+
+      const row = `="${zaman_ms}";="${speed}";="${temp}";="${voltage}";="${energy}"\n`;
+      
+      fs.appendFile(currentCsvFile, row, err=>{
+        if(err) console.error("CSV bulk write error:",err);
+      });
+
+      // Arayüzdeki tabloda hemen görünmesi için RAM'e de ekliyoruz
+      ramLogs.push({ zaman_ms, speed, temp, voltage, energy });
+      if(ramLogs.length > MAX_RAM) ramLogs.shift();
+    });
+
+    logVersion++; // UI tablosunun güncellenmesi için versiyonu artırıyoruz
+
+    res.json({status:"ok"});
   }catch(e){
     console.error(e);
     res.status(500).json({error:"server"});
@@ -107,12 +159,26 @@ app.get("/logs",(req,res)=>{
   res.json({ version: logVersion, data: cachedReversed });
 });
 
-// ================= CSV DOWNLOAD =================
-app.get("/download-csv",(req,res)=>{
-  if(!fs.existsSync(csvFile))
-    return res.status(404).send("CSV bulunamadı");
+// ================= CSV DOWNLOAD & LIST =================
+app.get("/list-csv",(req,res)=>{
+  fs.readdir(__dirname, (err, files) => {
+    if (err) return res.status(500).send("Dosya okuma hatası");
+    const csvFiles = files.filter(f => f.startsWith("SUBUTETRA-EMT_telemetry_") && f.endsWith(".csv"));
+    // En yeni en üstte veya altta olabilir, isimler tarihe göre sıralı.
+    res.json(csvFiles.sort());
+  });
+});
 
-  res.download(csvFile,"telemetry.csv");
+app.get("/download-csv/:filename",(req,res)=>{
+  const file = req.params.filename;
+  if (!file.startsWith("SUBUTETRA-EMT_telemetry_") || !file.endsWith(".csv")) {
+    return res.status(400).send("Geçersiz dosya");
+  }
+  const filePath = path.join(__dirname, file);
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).send("CSV bulunamadı");
+  }
+  res.download(filePath, file);
 });
 
 // ================= HEALTH =================
