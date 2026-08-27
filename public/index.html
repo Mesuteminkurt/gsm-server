@@ -510,7 +510,7 @@ d.temp>60?`<span class="alert">${d.temp} °C ⚠</span>`:d.temp+" °C";
 
 document.getElementById("voltage").innerText=d.voltage+" V";
 document.getElementById("energy").innerText=d.energy+" Wh";
-document.getElementById("soc").innerText=(d.soc !== undefined && d.soc !== null ? Number(d.soc).toFixed(1) : "-")+" %";
+document.getElementById("soc").innerText=(d.soc !== undefined && d.soc !== null ? Number(d.soc).toFixed(2) : "-")+" %";
 document.getElementById("time").innerText=new Date(d.timestamp).toLocaleString();
 
 // Düşük Hücre Gerilimi (st1)
