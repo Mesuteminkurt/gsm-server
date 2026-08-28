@@ -80,6 +80,11 @@ app.post("/telemetry",(req,res)=>{
     lastTelemetry=data;
     logVersion++;
 
+    if (global.dataTimeout) clearTimeout(global.dataTimeout);
+    global.dataTimeout = setTimeout(() => {
+      lastTelemetry = null;
+    }, 5000);
+
     // RAM cache (sadece istenen veriler)
     ramLogs.push({ zaman_ms, speed, temp, voltage, energy });
     if(ramLogs.length>MAX_RAM)
@@ -108,6 +113,7 @@ app.post("/telemetry-bulk",(req,res)=>{
     let bulkData = req.body;
     if(!Array.isArray(bulkData)) return res.status(400).json({error:"Array expected"});
 
+    // Bulk verileri RAM'e ekle
     bulkData.forEach(item => {
       let zaman_ms = Number(item.zaman_ms ?? 0);
       let speed = Number(item.sp ?? 0);
@@ -115,18 +121,24 @@ app.post("/telemetry-bulk",(req,res)=>{
       let voltage = Number(item.v ?? 0);
       let energy = Number(item.e ?? 0);
 
-      const row = `="${zaman_ms}";="${speed}";="${temp}";="${voltage}";="${energy}"\n`;
-      
-      fs.appendFile(currentCsvFile, row, err=>{
-        if(err) console.error("CSV bulk write error:",err);
-      });
-
-      // Arayüzdeki tabloda hemen görünmesi için RAM'e de ekliyoruz
       ramLogs.push({ zaman_ms, speed, temp, voltage, energy });
-      if(ramLogs.length > MAX_RAM) ramLogs.shift();
     });
 
-    logVersion++; // UI tablosunun güncellenmesi için versiyonu artırıyoruz
+    // RAM'i zaman_ms'e göre sırala (kronolojik düzen)
+    ramLogs.sort((a, b) => a.zaman_ms - b.zaman_ms);
+    if(ramLogs.length > MAX_RAM) ramLogs = ramLogs.slice(-MAX_RAM);
+
+    // CSV dosyasını sıralı haliyle baştan yaz
+    const header = "\uFEFFsep=;\nzaman_ms;hız;batarya max sıcaklık;batarya voltajı;kalan enerji\n";
+    let csvContent = header;
+    ramLogs.forEach(r => {
+      csvContent += `="${r.zaman_ms}";="${r.speed}";="${r.temp}";="${r.voltage}";="${r.energy}"\n`;
+    });
+    fs.writeFile(currentCsvFile, csvContent, "utf8", err => {
+      if(err) console.error("CSV bulk rewrite error:", err);
+    });
+
+    logVersion++;
 
     res.json({status:"ok"});
   }catch(e){

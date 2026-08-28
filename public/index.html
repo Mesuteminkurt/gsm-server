@@ -497,7 +497,50 @@ async function update(){
 try{
 let r=await fetch("/last");
 let d=await r.json();
-if(!d.timestamp) return;
+if(!d.timestamp || d.status === "no_data") {
+  if (prevTimestamp === null) return; // Zaten sıfırlanmışsa tekrar DOM yorma
+  prevTimestamp = null;
+  drawGauge(0);
+  document.getElementById("temp").innerText="-";
+  document.getElementById("voltage").innerText="-";
+  document.getElementById("energy").innerText="-";
+  document.getElementById("soc").innerText="-";
+  document.getElementById("time").innerText="-";
+  document.getElementById("bat_current").innerText="-";
+  document.getElementById("iso_n").innerText="-";
+  document.getElementById("iso_p").innerText="-";
+  
+  for(let i=1; i<=28; i++) {
+    let el = document.getElementById("c"+i);
+    if(el) el.innerText = "- V";
+  }
+  for(let i=1; i<=5; i++) {
+    let el = document.getElementById("bt"+i);
+    if(el) el.innerText = "- °C";
+  }
+  
+  document.getElementById("badge_st1").className = "status-badge badge-off";
+  document.getElementById("badge_st1").innerText = "VERİ YOK";
+  document.getElementById("desc_st1").className = "status-desc off";
+  document.getElementById("desc_st1").innerText = "-";
+
+  document.getElementById("badge_st2").className = "status-badge badge-off";
+  document.getElementById("badge_st2").innerText = "VERİ YOK";
+  document.getElementById("desc_st2").className = "status-desc off";
+  document.getElementById("desc_st2").innerText = "-";
+
+  document.getElementById("badge_st3").className = "status-badge badge-off";
+  document.getElementById("badge_st3").innerText = "VERİ YOK";
+  document.getElementById("desc_st3").className = "status-desc off";
+  document.getElementById("desc_st3").innerText = "-";
+
+  document.getElementById("badge_st4").className = "status-badge badge-off";
+  document.getElementById("badge_st4").innerText = "VERİ YOK";
+  document.getElementById("desc_st4").className = "status-desc off";
+  document.getElementById("desc_st4").innerText = "-";
+  
+  return;
+}
 
 // Aynı veri geliyorsa DOM güncellemesini atla
 if(d.timestamp === prevTimestamp) return;
