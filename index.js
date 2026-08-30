@@ -36,6 +36,24 @@ function createNewCsvFile() {
 // İlk başlangıçta bir dosya oluştur
 createNewCsvFile();
 
+// ================= EKSTRA CSV KAYIT =================
+let extraCsvFile = "";
+let extraCsvActive = false;
+let extraCsvRowCount = 0;
+
+function createExtraCsvFile() {
+  const d = new Date(Date.now() + 3 * 60 * 60 * 1000);
+  const pad = n => String(n).padStart(2, "0");
+  const timeStr = `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}_${pad(d.getUTCHours())}-${pad(d.getUTCMinutes())}-${pad(d.getUTCSeconds())}`;
+  
+  // Sütun başlıkları: sistem/uyarı durumları (st1-st4), hücreler ve sıcaklık sensörleri HARİÇ
+  const header = `\uFEFFsep=;\nzaman_ms;timestamp;hız;batarya max sıcaklık;batarya voltajı;kalan enerji;SOC;batarya akımı;izolasyon_n;izolasyon_p\n`;
+  
+  extraCsvFile = path.join(__dirname, `SUBUTETRA-EMT_EKSTRA_${timeStr}.csv`);
+  fs.writeFileSync(extraCsvFile, header, "utf8");
+  extraCsvRowCount = 0;
+}
+
 // ================= ZAMAN (GMT+3) =================
 function getTimestamp(){
   const d=new Date(Date.now() + 3 * 60 * 60 * 1000);
@@ -98,6 +116,21 @@ const row =
     fs.appendFile(currentCsvFile,row,err=>{
       if(err) console.error("CSV write error:",err);
     });
+
+    // ===== EKSTRA CSV KAYIT =====
+    if(extraCsvActive && extraCsvFile) {
+      const ba = dataBody.ba !== undefined ? dataBody.ba : "";
+      const iso_n = dataBody.in !== undefined ? dataBody.in : "";
+      const iso_p = dataBody.ip !== undefined ? dataBody.ip : "";
+      const ts = getTimestamp();
+
+      const extraRow = `="${zaman_ms}";"${ts}";="${speed}";="${temp}";="${voltage}";="${energy}";="${soc}";="${ba}";="${iso_n}";="${iso_p}"\n`;
+
+      fs.appendFile(extraCsvFile, extraRow, err => {
+        if(err) console.error("Extra CSV write error:", err);
+      });
+      extraCsvRowCount++;
+    }
 
     res.json({status:"ok"});
 
@@ -191,6 +224,37 @@ app.get("/download-csv/:filename",(req,res)=>{
     return res.status(404).send("CSV bulunamadı");
   }
   res.download(filePath, file);
+});
+
+// ================= EKSTRA CSV ENDPOINT'LERİ =================
+app.post("/extra-csv/start",(req,res)=>{
+  if(extraCsvActive) return res.json({status:"already_recording", file: path.basename(extraCsvFile), rows: extraCsvRowCount});
+  createExtraCsvFile();
+  extraCsvActive = true;
+  console.log("Ekstra CSV kaydı başlatıldı:", extraCsvFile);
+  res.json({status:"started", file: path.basename(extraCsvFile)});
+});
+
+app.post("/extra-csv/stop",(req,res)=>{
+  if(!extraCsvActive) return res.json({status:"not_recording"});
+  extraCsvActive = false;
+  console.log("Ekstra CSV kaydı durduruldu:", extraCsvFile, "Toplam satır:", extraCsvRowCount);
+  res.json({status:"stopped", file: path.basename(extraCsvFile), rows: extraCsvRowCount});
+});
+
+app.get("/extra-csv/status",(req,res)=>{
+  res.json({
+    active: extraCsvActive,
+    file: extraCsvFile ? path.basename(extraCsvFile) : "",
+    rows: extraCsvRowCount
+  });
+});
+
+app.get("/extra-csv/download",(req,res)=>{
+  if(!extraCsvFile || !fs.existsSync(extraCsvFile)) {
+    return res.status(404).send("Ekstra CSV bulunamadı");
+  }
+  res.download(extraCsvFile, path.basename(extraCsvFile));
 });
 
 // ================= HEALTH =================

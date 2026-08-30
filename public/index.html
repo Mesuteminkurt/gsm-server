@@ -219,6 +219,57 @@ filter:drop-shadow(0 0 25px rgba(56,189,248,.4));
 .cell-title { font-size: 13px; color: #94a3b8; }
 .cell-val { font-size: 16px; font-weight: bold; color: #38bdf8; margin-top: 6px; }
 .temps-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+
+/* EXTRA CSV RECORD BUTTON */
+.extra-rec-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 15px;
+}
+.rec-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 24px;
+  font-size: 15px;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: .25s;
+  box-shadow: 0 0 15px rgba(0,0,0,.3);
+}
+.rec-btn.idle {
+  background: linear-gradient(90deg, #38bdf8, #0ea5e9);
+  color: white;
+  box-shadow: 0 0 20px rgba(56,189,248,.3);
+}
+.rec-btn.recording {
+  background: linear-gradient(90deg, #ef4444, #dc2626);
+  color: white;
+  box-shadow: 0 0 20px rgba(239,68,68,.4);
+}
+.rec-btn:hover { transform: scale(1.05); }
+.rec-dot {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.rec-dot.idle { background: #38bdf8; }
+.rec-dot.recording {
+  background: #ff3333;
+  animation: pulse-rec 1s infinite;
+}
+@keyframes pulse-rec {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(255,51,51,.7); }
+  50% { opacity: .5; box-shadow: 0 0 0 8px rgba(255,51,51,0); }
+}
+.rec-info {
+  font-size: 13px;
+  color: #94a3b8;
+}
+.rec-info .active { color: #f87171; font-weight: 600; }
 </style>
 </head>
 <body>
@@ -241,6 +292,13 @@ filter:drop-shadow(0 0 25px rgba(56,189,248,.4));
 <!-- TELEMETRİ -->
 <div id="telemetry" class="page active">
 
+<div class="extra-rec-container" style="width:95%; max-width:1300px;">
+  <button class="rec-btn idle" id="extraRecBtn" onclick="toggleExtraRec()">
+    <span class="rec-dot idle" id="extraRecDot"></span>
+    <span id="extraRecLabel">Ekstra Kayıt Başlat</span>
+  </button>
+  <div class="rec-info" id="extraRecInfo"></div>
+</div>
 <div style="display:flex; flex-wrap:nowrap; gap:25px; width:95%; max-width:1300px; align-items:center; justify-content:center; margin-bottom:15px;">
   <div style="flex: 0 0 240px;">
     <canvas id="gauge" width="260" height="260" style="width:100%; height:100%; filter:drop-shadow(0 0 15px rgba(56,189,248,.4));"></canvas>
@@ -639,6 +697,92 @@ chart.update();
 
 }catch{}
 }
+
+/* ===== EKSTRA CSV KAYIT ===== */
+let extraRecording = false;
+let extraRecTimer = null;
+let extraRecStartTime = null;
+
+function updateExtraRecUI(active, rows, file) {
+  const btn = document.getElementById("extraRecBtn");
+  const dot = document.getElementById("extraRecDot");
+  const label = document.getElementById("extraRecLabel");
+  const info = document.getElementById("extraRecInfo");
+
+  extraRecording = active;
+
+  if(active) {
+    btn.className = "rec-btn recording";
+    dot.className = "rec-dot recording";
+    label.textContent = "Ekstra Kaydı Durdur";
+    let elapsed = extraRecStartTime ? Math.floor((Date.now() - extraRecStartTime) / 1000) : 0;
+    let min = Math.floor(elapsed / 60);
+    let sec = elapsed % 60;
+    info.innerHTML = `<span class="active">● KAYIT YAPILIYOR</span> — ${rows} satır — ${min}dk ${sec}sn`;
+  } else {
+    btn.className = "rec-btn idle";
+    dot.className = "rec-dot idle";
+    label.textContent = "Ekstra Kayıt Başlat";
+    if(file && rows > 0) {
+      info.innerHTML = `Son kayıt: ${file} (${rows} satır) — <a href="/extra-csv/download" style="color:#38bdf8; text-decoration:underline;" download>İndir</a>`;
+    } else {
+      info.innerHTML = "";
+    }
+  }
+}
+
+async function toggleExtraRec() {
+  try {
+    if(!extraRecording) {
+      let r = await fetch("/extra-csv/start", {method:"POST"});
+      let j = await r.json();
+      if(j.status === "started" || j.status === "already_recording") {
+        extraRecStartTime = Date.now();
+        updateExtraRecUI(true, 0, j.file);
+        // Canlı satır sayısı güncellemesi
+        if(extraRecTimer) clearInterval(extraRecTimer);
+        extraRecTimer = setInterval(checkExtraRecStatus, 2000);
+      }
+    } else {
+      let r = await fetch("/extra-csv/stop", {method:"POST"});
+      let j = await r.json();
+      if(extraRecTimer) { clearInterval(extraRecTimer); extraRecTimer = null; }
+      extraRecStartTime = null;
+      updateExtraRecUI(false, j.rows, j.file);
+    }
+  } catch(e) {
+    console.error("Extra CSV toggle error:", e);
+  }
+}
+
+async function checkExtraRecStatus() {
+  try {
+    let r = await fetch("/extra-csv/status");
+    let j = await r.json();
+    if(j.active) {
+      updateExtraRecUI(true, j.rows, j.file);
+    } else {
+      // Dışarıdan durdurulmuş olabilir
+      if(extraRecTimer) { clearInterval(extraRecTimer); extraRecTimer = null; }
+      extraRecStartTime = null;
+      updateExtraRecUI(false, j.rows, j.file);
+    }
+  } catch(e) {}
+}
+
+// Sayfa yüklendiğinde durum kontrolü (sayfa yenilenirse kayıt devam edebilir)
+(async function initExtraRec() {
+  try {
+    let r = await fetch("/extra-csv/status");
+    let j = await r.json();
+    if(j.active) {
+      extraRecStartTime = Date.now(); // Tam süreyi bilemeyiz ama yaklaşık
+      updateExtraRecUI(true, j.rows, j.file);
+      if(extraRecTimer) clearInterval(extraRecTimer);
+      extraRecTimer = setInterval(checkExtraRecStatus, 2000);
+    }
+  } catch(e) {}
+})();
 
 setInterval(update,1000);
 setInterval(loadCSV,5000);
