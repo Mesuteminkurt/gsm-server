@@ -89,6 +89,7 @@ app.post("/telemetry",(req,res)=>{
     let temp=Number(dataBody.t ?? dataBody.temp ?? 0);
     let voltage=Number(dataBody.v ?? dataBody.voltage ?? 0);
     let energy=Number(dataBody.e ?? dataBody.energy ?? 0);
+    energy = energy / 28 * 21;  // ham değer düzeltmesi
     let soc=Number(dataBody.s ?? dataBody.soc ?? 0) / 100;
 
     const timestamp=getTimestamp();
@@ -153,6 +154,7 @@ app.post("/telemetry-bulk",(req,res)=>{
       let temp = Number(item.t ?? 0);
       let voltage = Number(item.v ?? 0);
       let energy = Number(item.e ?? 0);
+      energy = energy / 28 * 21;  // ham değer düzeltmesi
 
       ramLogs.push({ zaman_ms, speed, temp, voltage, energy });
     });
